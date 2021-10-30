@@ -1,6 +1,24 @@
-#include "LevelSynth.h"
+class CurrentState:
 
-#include <math.h>
+    def __init__(self):
+        # CPlanarGraph state_graph
+        # std.vector<v2f> state_room_positions
+        # std.vector<int> my_indices
+        # float state_energy
+        pass
+
+    def move_rooms_to_scene_center(self, graph):
+        pass
+
+    def move_1d_chain_to_scene_center(self, indices):
+        pass
+
+    def get_state_difference(self, otherState, graph):
+        pass
+
+    def insert_to_new_states(self, new_states, graph):
+        pass
+
 
 def Random2(self, max):
     if max < 1 or max >= RAND_MAX:
@@ -9,122 +27,121 @@ def Random2(self, max):
         return (int)rand() / (RAND_MAX / max + 1)
 
 
-def MoveRoomsToSceneCenter(self, ptrGraph):
-    v2f pMin(1e10)
-    v2f pMax(-1e10)
-    for (j = 0; j < ptrGraph.GetNumOfNodes(); j++)
-        if ptrGraph.GetNode(j).GetFlagVisited() == False:
+def move_rooms_to_scene_center(self, graph):
+    v2f p_min(1e10)
+    v2f p_max(-1e10)
+    for (j = 0; j < graph.GetNumOfNodes(); j++):
+        if graph.GetNode(j).GetFlagVisited() == False:
             continue
 
-        pj = m_stateRoomPositions[j]
-        for (k = 0; k < 2; k++)
-            pMin[k] = min(pMin[k], pj[k])
-            pMax[k] = max(pMax[k], pj[k])
+        pj = state_room_positions[j]
+        for (k = 0; k < 2; k++):
+            p_min[k] = min(p_min[k], pj[k])
+            p_max[k] = max(p_max[k], pj[k])
 
 
-    posCen = (pMin + pMax) * 0.5f
-    for (j = 0; j < ptrGraph.GetNumOfNodes(); j++)
-        m_stateRoomPositions[j] = m_stateRoomPositions[j] - posCen
+    pos_cen = (p_min + p_max) * 0.5f
+    for (j = 0; j < graph.GetNumOfNodes(); j++):
+        state_room_positions[j] = state_room_positions[j] - pos_cen
 
 
 
-def Move1DchainToSceneCenter(self, indices):
-    v2f pMin(1e10)
-    v2f pMax(-1e10)
-    for (j = 0; j < int(indices.size()); j++)
+def move_1d_chain_to_scene_center(self, indices):
+    v2f p_min(1e10)
+    v2f p_max(-1e10)
+    for (j = 0; j < int(indices.size()); j++):
         idx = indices[j]
-        pj = m_stateRoomPositions[idx]
-        for (k = 0; k < 2; k++)
-            pMin[k] = min(pMin[k], pj[k])
-            pMax[k] = max(pMax[k], pj[k])
+        pj = state_room_positions[idx]
+        for (k = 0; k < 2; k++):
+            p_min[k] = min(p_min[k], pj[k])
+            p_max[k] = max(p_max[k], pj[k])
 
 
-    posCen = (pMin + pMax) * 0.5f
-    for (j = 0; j < int(indices.size()); j++)
+    pos_cen = (p_min + p_max) * 0.5f
+    for (j = 0; j < int(indices.size()); j++):
         idx = indices[j]
-        m_stateRoomPositions[idx] = m_stateRoomPositions[idx] - posCen
+        state_room_positions[idx] = state_room_positions[idx] - pos_cen
 
 
 
-def GetStateDifference(self, otherState, ptrGraph):
+def get_state_difference(self, otherState, graph):
     stateDiff = 0.f
-    for (j = 0; j < ptrGraph.GetNumOfNodes(); j++)
-        # ptrGraph.GetNode(pickedRoomIndex).SetType(typeNew)
+    for (j = 0; j < graph.GetNumOfNodes(); j++):
+        # graph.GetNode(picked_room_index).SetType(typeNew)
 
-        if ptrGraph.GetNode(j).GetFlagVisited() == False:
+        if graph.GetNode(j).GetFlagVisited() == False:
             continue
 
         '''
-		if ptrGraph.GetNode(j).GetType() != otherState.m_stateGraph.GetNode(j).GetType():
-		stateDiff += 2 * CLevelConfig.m_stateDiffThresh
+        if graph.GetNode(j).GetType() != otherState.state_graph.GetNode(j).GetType():
+        stateDiff += 2 * CLevelConfig.m_stateDiffThresh
 
-		'''
-        p1 = m_stateRoomPositions[j]
-        p2 = otherState.m_stateRoomPositions[j]
+        '''
+        p1 = state_room_positions[j]
+        p2 = otherState.state_room_positions[j]
         stateDiff += mag2(p1 - p2)
 
     return stateDiff
 
 
-def InsertToNewStates(self, newStates, ptrGraph):
+def insert_to_new_states(self, new_states, graph):
     stateDiffThresh = CLevelConfig.m_stateDiffThresh
     if stateDiffThresh <= 0.f:
-        newStates.push_back(*self)
+        new_states.push_back(*self)
         return True
 
-    for (i = 0; i < int(newStates.size()); i++)
-        if m_stateEnergy < newStates[i].m_stateEnergy:
+    for (i = 0; i < int(new_states.size()); i++):
+        if state_energy < new_states[i].state_energy:
             continue
 
-        stateDiff = GetStateDifference(newStates[i], ptrGraph)
+        stateDiff = get_state_difference(new_states[i], graph)
         if stateDiff <= stateDiffThresh:
             return False
 
-
-    newStates.push_back(*self)
+    new_states.push_back(*self)
     return True
 
 
 CLevelSynth.CLevelSynth()
-    m_ptrGraph = NULL
+    self.graph = NULL
     m_ptrTemplates = NULL
-    m_solutionCount = 0
+    self.solution_count = 0
     m_bestSolCount = 0
-    m_chainCount = 0
-    m_backTrackCount = 0
-    m_backTrackLevel = 0
+    self.chain_count = 0
+    self.backtrack_count = 0
+    self.backtrack_level = 0
 
 
-CLevelSynth.CLevelSynth(CPlanarGraph* ptrGraph, ptrTemplates)
-    SetGraphAndTemplates(ptrGraph, ptrTemplates)
+CLevelSynth.CLevelSynth(CPlanarGraph* graph, ptrTemplates)
+    SetGraphAndTemplates(graph, ptrTemplates)
 
 
-def SetGraphAndTemplates(self, ptrGraph, ptrTemplates):
-    m_solutionCount = 0
+def SetGraphAndTemplates(self, graph, ptrTemplates):
+    self.solution_count = 0
     m_bestSolCount = 0
-    ptrGraph.MoveGraphToSceneCenter()
-    ptrGraph.ScaleGraphNodePositions(CLevelConfig.m_graphScaling)
-    SetGraph(ptrGraph)
+    graph.MoveGraphToSceneCenter()
+    graph.ScaleGraphNodePositions(CLevelConfig.m_graphScaling)
+    SetGraph(graph)
     m_ptrTemplates = ptrTemplates
-    m_ptrGraph.SetNumOfTypes(m_ptrTemplates.GetNumOfTemplates())
-    m_ptrGraph.RandomInitTypes()
+    self.graph.SetNumOfTypes(m_ptrTemplates.GetNumOfTemplates())
+    self.graph.RandomInitTypes()
 
-    #m_ptrGraph.RandomInitPositions()
+    #self.graph.RandomInitPositions()
     InitScene()
     SynthesizeScene()
 
 
-def SetGraph(self, ptrGraph):
-    m_ptrGraph = ptrGraph
-    m_roomPositions.resize(m_ptrGraph.GetNumOfNodes())
-    for (i = 0; i < m_ptrGraph.GetNumOfNodes(); i++)
-        pi = m_ptrGraph.GetNodePos(i)
-        m_roomPositions[i] = pi
+def SetGraph(self, graph):
+    self.graph = graph
+    room_positions.resize(self.graph.GetNumOfNodes())
+    for (i = 0; i < self.graph.GetNumOfNodes(); i++):
+        pi = self.graph.GetNodePos(i)
+        room_positions[i] = pi
 
 
 
 def MovePickedGraphNode(self, dx, dy):
-    m_ptrGraph.MovePickedNode(dx, dy)
+    self.graph.MovePickedNode(dx, dy)
     InitScene()
     flag = False
     #flag = AdjustPickedRoom(dx, dy)
@@ -132,13 +149,13 @@ def MovePickedGraphNode(self, dx, dy):
 
 
 def AdjustPickedRoom(self, dx, dy):
-    pickedNodeIndex = m_ptrGraph.GetPickedNodeIndex()
+    pickedNodeIndex = self.graph.GetPickedNodeIndex()
     flag = False
     if pickedNodeIndex < 0:
         return flag
 
-    pickedRoom = m_layout.GetRoom(pickedNodeIndex)
-    for (i = 0; i < pickedRoom.GetNumOfEdges(); i++)
+    pickedRoom = self.layout.get_room(pickedNodeIndex)
+    for (i = 0; i < pickedRoom.GetNumOfEdges(); i++):
         edge = pickedRoom.GetEdge(i)
         pr2 = edge.GetPos2() - edge.GetPos1()
         pr = v3f(pr2[0], pr2[1], 0.f)
@@ -146,12 +163,12 @@ def AdjustPickedRoom(self, dx, dy):
         norm = normalize(norm)
         distMin = 1e10
         CRoomEdge edgeNearest
-        for (j = 0; j < m_layout.GetNumOfRooms(); j++)
+        for (j = 0; j < self.layout.GetNumOfRooms(); j++):
             if j == pickedNodeIndex:
                 continue
 
-            otherRoom = m_layout.GetRoom(j)
-            for (k = 0; k < otherRoom.GetNumOfEdges(); k++)
+            otherRoom = self.layout.get_room(j)
+            for (k = 0; k < otherRoom.GetNumOfEdges(); k++):
                 otherEdge = otherRoom.GetEdge(k)
                 otherPr2 = otherEdge.GetPos2() - otherEdge.GetPos1()
                 otherPr = v3f(otherPr2[0], otherPr2[1], 0.f)
@@ -171,7 +188,7 @@ def AdjustPickedRoom(self, dx, dy):
             pr = edgeNearest.GetPos1() - edge.GetPos1()
             d = dot(norm, pr)
             dp = d * norm
-            m_ptrGraph.MovePickedNode(dp)
+            self.graph.MovePickedNode(dp)
             InitScene()
             dx += dp[0]
             dy += dp[1]
@@ -182,69 +199,69 @@ def AdjustPickedRoom(self, dx, dy):
 
 
 def InitScene(self):
-    m_layout.ClearLayout()
-    numOfRooms = m_ptrGraph.GetNumOfNodes()
+    self.layout.ClearLayout()
+    numOfRooms = self.graph.GetNumOfNodes()
     numOfTemplates = m_ptrTemplates.GetNumOfTemplates()
-    for (i = 0; i < numOfRooms; i++)
+    for (i = 0; i < numOfRooms; i++):
         #idx = int(rand() / float(RAND_MAX) * numOfTemplates)
-        idx = m_ptrGraph.GetNode(i).GetType()
+        idx = self.graph.GetNode(i).GetType()
         idx = idx % numOfTemplates
-        room = m_ptrTemplates.GetRoom(idx)
+        room = m_ptrTemplates.get_room(idx)
         #room.ScaleRoom(0.5f)
-        pi = m_ptrGraph.GetNodePos(i)
-        c = room.GetRoomCenter()
+        pi = self.graph.GetNodePos(i)
+        c = room.get_room_centre()
         trans = pi - c
-        room.TranslateRoom(trans)
+        room.translate_room(trans)
         color = randomColorFromIndex(i)
         if mag2(color) > 2.5f:
             color = color * 0.5f
 
         room.SetColor(color)
-        m_layout.AddRoom(room)
+        self.layout.AddRoom(room)
 
 
 
-def GetLayout(self, ptrGraph, roomPositions):
+def get_layout(self, graph, room_positions):
     CRoomLayout layout
-    numOfRooms = ptrGraph.GetNumOfNodes()
+    numOfRooms = graph.GetNumOfNodes()
     numOfTemplates = m_ptrTemplates.GetNumOfTemplates()
-    for (i = 0; i < numOfRooms; i++)
-        idx = ptrGraph.GetNode(i).GetType()
+    for (i = 0; i < numOfRooms; i++):
+        idx = graph.GetNode(i).GetType()
         idx = idx % numOfTemplates
-        room = m_ptrTemplates.GetRoom(idx)
-        pi = roomPositions[i]
-        c = room.GetRoomCenter()
+        room = m_ptrTemplates.get_room(idx)
+        pi = room_positions[i]
+        c = room.get_room_centre()
         trans = pi - c
-        room.TranslateRoom(trans)
+        room.translate_room(trans)
         color = randomColorFromIndex(i)
         if mag2(color) > 2.5f:
             color = color * 0.5f
 
         room.SetColor(color)
-        room.SetFlagFixed(ptrGraph.GetNode(i).GetFlagFixed())
+        room.SetFlagFixed(graph.GetNode(i).GetFlagFixed())
         layout.AddRoom(room)
 
     return layout
 
 
 def SynthesizeScene(self):
-    SynthesizeSceneViaMainLoop()
+    synthesize_scene_via_main_loop()
     UpdateGraphFromLayout()
 
 
 def UpdateGraphFromLayout(self):
-    numOfRooms = m_ptrGraph.GetNumOfNodes()
-    for (i = 0; i < numOfRooms; i++)
-        roomCenter = m_layout.GetRoom(i).GetRoomCenter()
-        m_ptrGraph.GetNode(i).SetPos(roomCenter)
+    numOfRooms = self.graph.GetNumOfNodes()
+    for (i = 0; i < numOfRooms; i++):
+        roomCenter = self.layout.get_room(i).get_room_centre()
+        self.graph.GetNode(i).SetPos(roomCenter)
 
 
 
-def PostProcessing(self, layout, ptrGraph):
-    for (i = 0; i < layout.GetNumOfRooms(); i++)
+def PostProcessing(self, layout, graph):
+    for (i = 0; i < layout.GetNumOfRooms(); i++):
         std.vector<int> neighbors
-        for (j = 0; j < ptrGraph.GetNumOfEdges(); j++)
-            edge = ptrGraph.GetEdge(j)
+        for (j = 0; j < graph.GetNumOfEdges(); j++):
+            edge = graph.GetEdge(j)
             if edge.GetIdx0() == i:
                 neighbors.push_back(edge.GetIdx1())
 
@@ -255,41 +272,39 @@ def PostProcessing(self, layout, ptrGraph):
         if neighbors.empty() == True:
             continue
 
-        CConfigSpace configSpace0(layout.GetRoom(neighbors[0]), layout.GetRoom(i))
-        for (j = 1; j < int(neighbors.size()); j++)
-            CConfigSpace configSpace1(layout.GetRoom(neighbors[j]), layout.GetRoom(i))
+        CConfigSpace configSpace0(layout.get_room(neighbors[0]), layout.get_room(i))
+        for (j = 1; j < int(neighbors.size()); j++):
+            CConfigSpace configSpace1(layout.get_room(neighbors[j]), layout.get_room(i))
             configSpace0 = CConfigSpace.FindIntersection(configSpace0, configSpace1)
 
         configSpace0.SelfMerge()
-        std.cout << "Size of configuration space for the " << i << "th room: " << configSpace0.GetConfigSpaceSize() << std.endl
+        print(f'Size of configuration space for the {i}th room: {configSpace0.GetConfigSpaceSize()}')
         configSpace0.PrintConfigSpace()
 
     return True
 
 
-def OpenDoors(self, layout, ptrGraph, flagPartial ''' = False '''):
-    for (i = 0; i < layout.GetNumOfRooms(); i++)
-        layout.GetRoom(i).InitWalls()
+def OpenDoors(self, layout, graph, flag_partial ''' = False '''):
+    for (i = 0; i < layout.GetNumOfRooms(); i++):
+        layout.get_room(i).InitWalls()
 
-    for (i = 0; i < ptrGraph.GetNumOfEdges(); i++)
-        ge = ptrGraph.GetEdge(i)
+    for (i = 0; i < graph.GetNumOfEdges(); i++):
+        ge = graph.GetEdge(i)
         roomIdx1 = ge.GetIdx0()
         roomIdx2 = ge.GetIdx1()
-        room1 = layout.GetRoom(roomIdx1)
-        room2 = layout.GetRoom(roomIdx2)
-        if room1.GetFlagFixed() == True or room2.GetFlagFixed() == True:
+        room1 = layout.get_room(roomIdx1)
+        room2 = layout.get_room(roomIdx2)
+        if room1.GetFlagFixed() or room2.GetFlagFixed():
             continue
 
         int edgeIdx1, edgeIdx2
         contact = RoomContact(room1, room2, edgeIdx1, edgeIdx2)
-        if (contact < CLevelConfig.m_roomContactThresh) # just to double check
-            if flagPartial == False:
-                std.cout << "Failed to open the door on the wall between Room " << roomIdx1 << " and Room " << roomIdx2 << " (case 1)not \n"
+        if (contact < CLevelConfig.m_roomContactThresh): # just to double check
+            if not flag_partial:
+                print(f'Failed to open the door on the wall between Room {roomIdx1} and Room {roomIdx2} (case 1)!')
                 return False
-
             else:
                 continue
-
 
         std.vector<v2f> vecPos(4)
         edge1 = room1.GetEdge(edgeIdx1)
@@ -302,10 +317,9 @@ def OpenDoors(self, layout, ptrGraph, flagPartial ''' = False '''):
         RoomDoor door(vecPos[1], vecPos[2])
         flag1 = OpenDoor(room1, door)
         flag2 = OpenDoor(room2, door)
-        if flag1 == False or flag2 == False:
-            std.cout << "Failed to open the door on the wall between Room " << roomIdx1 << " and Room " << roomIdx2 << " (case 2)not \n"
+        if not flag1 or not flag2:
+            print(f'Failed to open the door on the wall between Room {roomIdx1} and Room {roomIdx2} (case 2)!')
             return False
-
 
     return True
 
@@ -342,25 +356,25 @@ def OpenDoor(self, room, door, width ''' = -1.f '''):
     return openFlag
 
 
-def OpenDoors(self, layout, layoutShrinked, ptrGraph, thrinkDist):
-    for (i = 0; i < layout.GetNumOfRooms(); i++)
-        layout.GetRoom(i).InitWalls()
-        layoutShrinked.GetRoom(i).InitWalls()
+def OpenDoors(self, layout, layoutShrinked, graph, thrinkDist):
+    for (i = 0; i < layout.GetNumOfRooms(); i++):
+        layout.get_room(i).InitWalls()
+        layoutShrinked.get_room(i).InitWalls()
 
     doorWidth = CLevelConfig.m_roomContactThresh * 0.8f
-    for (i = 0; i < ptrGraph.GetNumOfEdges(); i++)
-        ge = ptrGraph.GetEdge(i)
+    for (i = 0; i < graph.GetNumOfEdges(); i++):
+        ge = graph.GetEdge(i)
         roomIdx1 = ge.GetIdx0()
         roomIdx2 = ge.GetIdx1()
-        room1 = layout.GetRoom(roomIdx1)
-        room2 = layout.GetRoom(roomIdx2)
+        room1 = layout.get_room(roomIdx1)
+        room2 = layout.get_room(roomIdx2)
         if room1.GetFlagFixed() == True or room2.GetFlagFixed() == True:
             continue
 
         int edgeIdx1, edgeIdx2
         contact = RoomContact(room1, room2, edgeIdx1, edgeIdx2)
         if (contact < doorWidth) # just to double check
-            std.cout << "Failed to open the door on the wall between Room " << roomIdx1 << " and Room " << roomIdx2 << " (case 1)not \n"
+            print(f'Failed to open the door on the wall between Room {roomIdx1} and Room {roomIdx2} (case 1)!')
             return False
 
         std.vector<v2f> vecPos(4)
@@ -390,24 +404,20 @@ def OpenDoors(self, layout, layoutShrinked, ptrGraph, thrinkDist):
         layoutShrinked.InsertCorridorWall(wall2)
         RoomDoor door1(p3, p5)
         RoomDoor door2(p4, p6)
-        flag1 = OpenDoor(layoutShrinked.GetRoom(roomIdx1), door1, doorWidth) or OpenDoor(layoutShrinked.GetRoom(roomIdx1), door2, doorWidth)
-        flag2 = OpenDoor(layoutShrinked.GetRoom(roomIdx2), door1, doorWidth) or OpenDoor(layoutShrinked.GetRoom(roomIdx2), door2, doorWidth)
+        flag1 = OpenDoor(layoutShrinked.get_room(roomIdx1), door1, doorWidth) or OpenDoor(layoutShrinked.get_room(roomIdx1), door2, doorWidth)
+        flag2 = OpenDoor(layoutShrinked.get_room(roomIdx2), door1, doorWidth) or OpenDoor(layoutShrinked.get_room(roomIdx2), door2, doorWidth)
         if flag1 == False or flag2 == False:
-            std.cout << "Failed to open the door on the wall between Room " << roomIdx1 << " and Room " << roomIdx2 << " (case 2)not \n"
+            print(f'Failed to open the door on the wall between Room {roomIdx1} and Room {roomIdx2} (case 2)!')
             return False
 
-
     return True
-
 
 def ShrinkRooms(self, layout, dist):
     if dist <= 0.f:
         return
 
-    for (i = 0; i < layout.GetNumOfRooms(); i++)
-        ShrinkRoom(layout.GetRoom(i), dist)
-
-
+    for (i = 0; i < layout.GetNumOfRooms(); i++):
+        ShrinkRoom(layout.get_room(i), dist)
 
 def ShrinkRoom(self, room, dist):
     if dist <= 0.f:
@@ -415,12 +425,12 @@ def ShrinkRoom(self, room, dist):
 
      numOfEdges = room.GetNumOfEdges()
     std.vector<CRoomEdge> vecRoomEdge(numOfEdges)
-    for (i = 0; i < numOfEdges; i++)
+    for (i = 0; i < numOfEdges; i++):
         vecRoomEdge[i] = room.GetEdge(i)
 
     std.vector<CRoomEdge> vecRoomEdge1 = vecRoomEdge
     std.vector<CRoomEdge> vecRoomEdge2 = vecRoomEdge
-    for (i = 0; i < numOfEdges; i++)
+    for (i = 0; i < numOfEdges; i++):
         pr = vecRoomEdge[i].GetPos2() - vecRoomEdge[i].GetPos1()
         prNew = v2f(pr[1], -pr[0])
         prNew = normalize(prNew) * dist
@@ -431,7 +441,7 @@ def ShrinkRoom(self, room, dist):
 
     std.vector<v2f> vertices1 = room.GetVertices()
     std.vector<v2f> vertices2 = room.GetVertices()
-    for (i = 0; i < numOfEdges; i++)
+    for (i = 0; i < numOfEdges; i++):
         idx1 = i
         idx2 = (i + 1) % numOfEdges
         v2f pi1
@@ -460,70 +470,70 @@ def ShrinkRoom(self, room, dist):
     room.SetVertices(verticesNew)
 
 
-def SaveGraphAsSVG(self, fileName, ptrGraph, wd ''' = 400 ''', ht ''' = 400 ''', labelRad ''' = 0.25f '''):
-    graphNew = *ptrGraph
+def SaveGraphAsSVG(self, fileName, graph, wd ''' = 400 ''', ht ''' = 400 ''', labelRad ''' = 0.25f '''):
+    graphNew = *graph
     graphNew.MoveGraphToSceneCenter()
     strokeWd = 5
     circleRad = 7
     v2f posMin, posMax
     graphNew.GetGraphBoundingBox(posMin, posMax)
-    pMin = min(posMin[0], posMin[1])
-    pMax = max(posMax[0], posMax[1])
+    p_min = min(posMin[0], posMin[1])
+    p_max = max(posMax[0], posMax[1])
     scaling = 1.05f
-    pMin *= scaling
-    pMax *= scaling
-     str = "\t<?xml version=\"1.0\" standalone=\"no\" ?>\n"
-                      "<not -- graph visualization -.\n"
-                      "<svg>\n"
-                      "</svg>\n"
+    p_min *= scaling
+    p_max *= scaling
+     str = '\t<?xml version=\'1.0\' standalone=\'no\' ?>\n'
+                      '<not -- graph visualization -.\n'
+                      '<svg>\n'
+                      '</svg>\n'
     tinyxml2.XMLDocument doc
     doc.Parse(str)
     root = doc.RootElement()
     std.ostringstream ossViewBox
-    ossViewBox << 0 << " " << 0 << " " << wd << " " << ht
-    root.SetAttribute("viewBox", ossViewBox.str().c_str())
-    root.SetAttribute("xmlns", "http:#www.w3.org/2000/svg")
+    ossViewBox << 0} {0} {wd} {ht
+    root.SetAttribute('viewBox', ossViewBox.str().c_str())
+    root.SetAttribute('xmlns', 'http:#www.w3.org/2000/svg')
     # Dump edges...
-    for (i = 0; i < graphNew.GetNumOfEdges(); i++)
-        edgeElement = doc.NewElement("path")
+    for (i = 0; i < graphNew.GetNumOfEdges(); i++):
+        edgeElement = doc.NewElement('path')
         std.ostringstream ossPath
         edge = graphNew.GetEdge(i)
         p1 = graphNew.GetNodePos(edge.GetIdx0())
         p2 = graphNew.GetNodePos(edge.GetIdx1())
-        ossPath << "M "
-        ossPath << CRoomLayout.ConvertPosX(p1[0], pMin, pMax, wd) << " "
-        ossPath << CRoomLayout.ConvertPosY(p1[1], pMin, pMax, ht) << " "
-        ossPath << "L "
-        ossPath << CRoomLayout.ConvertPosX(p2[0], pMin, pMax, wd) << " "
-        ossPath << CRoomLayout.ConvertPosY(p2[1], pMin, pMax, ht) << " "
-        edgeElement.SetAttribute("d", ossPath.str().c_str())
-        edgeElement.SetAttribute("fill", "none")
-        edgeElement.SetAttribute("stroke", "black")
-        edgeElement.SetAttribute("stroke-width", strokeWd)
+        ossPath}M '
+        ossPath << CRoomLayout.ConvertPosX(p1[0], p_min, p_max, wd)} '
+        ossPath << CRoomLayout.ConvertPosY(p1[1], p_min, p_max, ht)} '
+        ossPath}L '
+        ossPath << CRoomLayout.ConvertPosX(p2[0], p_min, p_max, wd)} '
+        ossPath << CRoomLayout.ConvertPosY(p2[1], p_min, p_max, ht)} '
+        edgeElement.SetAttribute('d', ossPath.str().c_str())
+        edgeElement.SetAttribute('fill', 'none')
+        edgeElement.SetAttribute('stroke', 'black')
+        edgeElement.SetAttribute('stroke-width', strokeWd)
         root.InsertEndChild(edgeElement)
 
     # Dump nodes...
-    for (i = 0; i < graphNew.GetNumOfNodes(); i++)
-        nodeElement = doc.NewElement("circle")
+    for (i = 0; i < graphNew.GetNumOfNodes(); i++):
+        nodeElement = doc.NewElement('circle')
         pi = graphNew.GetNodePos(i)
-        nodeElement.SetAttribute("cx", CRoomLayout.ConvertPosX(pi[0], pMin, pMax, wd))
-        nodeElement.SetAttribute("cy", CRoomLayout.ConvertPosY(pi[1], pMin, pMax, ht))
-        nodeElement.SetAttribute("r", circleRad)
-        nodeElement.SetAttribute("fill", "red")
-        nodeElement.SetAttribute("stroke", "none")
+        nodeElement.SetAttribute('cx', CRoomLayout.ConvertPosX(pi[0], p_min, p_max, wd))
+        nodeElement.SetAttribute('cy', CRoomLayout.ConvertPosY(pi[1], p_min, p_max, ht))
+        nodeElement.SetAttribute('r', circleRad)
+        nodeElement.SetAttribute('fill', 'red')
+        nodeElement.SetAttribute('stroke', 'none')
         root.InsertEndChild(nodeElement)
 
     # Dump labels...
-    for (i = 0; i < graphNew.GetNumOfNodes(); i++)
+    for (i = 0; i < graphNew.GetNumOfNodes(); i++):
         shiftX = (i >= 10) ? 8 : 3
         shiftY = 5
         pi = ComputeLabelPosition(i, &graphNew, labelRad)
-        labelElement = doc.NewElement("text")
-        labelElement.SetAttribute("x", CRoomLayout.ConvertPosX(pi[0], pMin, pMax, wd) - shiftX)
-        labelElement.SetAttribute("y", CRoomLayout.ConvertPosY(pi[1], pMin, pMax, ht) + shiftY)
-        labelElement.SetAttribute("font-family", "Verdana")
-        labelElement.SetAttribute("font-size", 13)
-        labelElement.SetAttribute("fill", "blue")
+        labelElement = doc.NewElement('text')
+        labelElement.SetAttribute('x', CRoomLayout.ConvertPosX(pi[0], p_min, p_max, wd) - shiftX)
+        labelElement.SetAttribute('y', CRoomLayout.ConvertPosY(pi[1], p_min, p_max, ht) + shiftY)
+        labelElement.SetAttribute('font-family', 'Verdana')
+        labelElement.SetAttribute('font-size', 13)
+        labelElement.SetAttribute('fill', 'blue')
         std.ostringstream ossLabel
         ossLabel << i
         labelText = doc.NewText(ossLabel.str().c_str())
@@ -536,149 +546,136 @@ def SaveGraphAsSVG(self, fileName, ptrGraph, wd ''' = 400 ''', ht ''' = 400 ''',
 
 
 def CompareStateEnergySmallerFirst(self, state1, state2):
-    return (state1.m_stateEnergy < state2.m_stateEnergy)
+    return (state1.state_energy < state2.state_energy)
 
 
-def SynthesizeSceneViaMainLoop(self):
-    CurrentState state0
-    state0.m_stateGraph = *m_ptrGraph
-    state0.m_stateRoomPositions = m_roomPositions
-    state0.m_stateEnergy = 1e10
-    std.stack<CurrentState> stateStack
-    stateStack.push(state0)
-    targetNumOfSolutions = CLevelConfig.m_targetNumOfSolutions
-    energyMin = 1e10
-    layoutBest = m_layout
-    numPartials = 0
-    m_backTrackCount = 0
-    m_backTrackLevel = 0
-    while (m_solutionCount < targetNumOfSolutions and stateStack.empty() == False)
-        oldState = stateStack.top()
-        stateStack.pop()
-        SetCurrentState(oldState)
-        m_flagVisitedNoNode = m_ptrGraph.VisitedNoNode()
-        flagCyclic = False
-        std.vector<int> tmpIndices = m_ptrGraph.ExtractDeepestFaceOrChain(flagCyclic, CLevelConfig.m_flagSmallFaceFirst)
-        std.vector<int> indices
+def synthesize_scene_via_main_loop(self):
+    state0 = CurrentState()
+    state0.state_graph = self.graph
+    state0.state_room_positions = self.room_positions
+    state0.state_energy = 1e10
+    state_stack = []
+    state_stack.insert(0, state0)
+    target_num_solutions = TARGET_NUM_SOLUTIONS
+    energy_min = 1e10
+    layout_best = self.layout
+    num_partials = 0
+    self.backtrack_count = 0
+    self.backtrack_level = 0
+    while self.solution_count < target_num_solutions and state_stack:
+        old_state = state_stack.pop(0)
+        self.set_current_state(old_state)
+        self.flag_visited_node = self.graph.VisitedNoNode()
+        flag_cyclic = False
+        tmp_indices = self.graph.ExtractDeepestFaceOrChain(flag_cyclic, FLAG_SMALL_FACE_FIRST)
+        indices = []
 #if 0 # Before 09/03/2013
-		if  CLevelConfig.m_synMethod != 0 :
-			# Select all the graph nodes...
-			indices.resize(m_ptrGraph.GetNumOfNodes())
-			for ( int i=0; i<int(indices.size()); i++ )
-				indices[i] = i
-
-
+        if SYN_METHOD != 0 :
+            # Select all the graph nodes...
+            indices.resize(self.graph.GetNumOfNodes())
+            for i in range(len(indices)):
+                indices[i] = i
 #else:
-        indices = oldState.myIndices
-        if CLevelConfig.m_synMethod != 0:
-            if m_ptrGraph.HasFixedNode() == False or m_ptrGraph.VisitedNoNode() == False:
-                indices = m_ptrGraph.GetUnfixedNodes()
+        indices = old_state.my_indices
+        if SYN_METHOD != 0:
+            if not self.graph.HasFixedNode() or not self.graph.VisitedNoNode():
+                indices = self.graph.GetUnfixedNodes()
 
-
-        for (i = 0; i < tmpIndices.size(); i++)
-            indices.push_back(tmpIndices[i])
-
+        for i in range(len(tmp_indices)):
+            indices.append(tmp_indices[i])
 #endif
         SetVisitedNeighbors(indices)
-        for (i = 0; i < m_ptrGraph.GetNumOfNodes(); i++)
-            m_ptrGraph.GetNode(i).SetFlagVisited(False)
+        for (i = 0; i < self.graph.GetNumOfNodes(); i++):
+            self.graph.GetNode(i).SetFlagVisited(False)
 
-
-        for (i = 0; i < int(indices.size()); i++)
+        for (i = 0; i < int(indices.size()); i++):
             index = indices[i]
-            m_ptrGraph.GetNode(indices[i]).SetFlagVisited(True)
+            self.graph.GetNode(indices[i]).SetFlagVisited(True)
 
-        oldState.m_stateGraph = *m_ptrGraph
-        std.vector<CurrentState> newStates
-        m_chainCount++
-        flag = Solve1Dchain(indices, &tmpIndices, oldState, newStates)
-        #flag = Solve1Dchain(indices, NULL, oldState, newStates)
-        if newStates.empty():
+        old_state.state_graph = self.graph
+        new_states = []
+        self.chain_count += 1
+        flag = self.solve_1d_chain(indices, tmp_indices, old_state, new_states)
+        if not new_states:
 #ifndef PERFORMANCE_TEST
-            std.cout << "Backtracked from level " << m_backTrackLevel << " to level " << m_backTrackLevel - 1 << "not " << std.endl
-            ofstream fout
-            fout.open(CLevelConfig.AddOutputPrefix("log.txt").c_str(), std.ios_base.app)
-            fout << "Backtracked from level " << m_backTrackLevel << " to level " << m_backTrackLevel - 1 << "not " << std.endl
+            print(f'Backtracked from level {self.backtrack_level} to level {self.backtrack_level - 1}!')
 #endif
-            m_backTrackCount++
-            m_backTrackLevel--
-
+            self.backtrack_count += 1
+            self.backtrack_level -= 1
         else:
-            m_backTrackLevel++
+            self.backtrack_level += 1
 
-        if m_ptrGraph.VisitedAllNodes() == True:
-            for (i = 0; i < int(newStates.size()); i++)
-                if m_solutionCount >= targetNumOfSolutions:
+        if self.graph.VisitedAllNodes():
+            for i in range(len(new_states)):
+                if self.solution_count >= target_num_solutions:
                     break
 
-                SetCurrentState(newStates[i])
-                if newStates[i].m_stateEnergy < energyMin:
-                    energyMin = newStates[i].m_stateEnergy
-                    layoutBest = m_layout
+                self.set_current_state(new_states[i])
+                if new_states[i].state_energy < energy_min:
+                    energy_min = new_states[i].state_energy
+                    layout_best = self.layout
 
-                float collide
-                float connectivity
-                energy = GetLayoutEnergy(m_layout, m_ptrGraph, collide, connectivity)
+                #float collide
+                #float connectivity
+                energy = self.get_layout_energy(self.layout, self.graph, collide, connectivity)
 
-                #float CLevelSynth.GetLayoutEnergy(CRoomLayout& layout, ptrGraph, collideArea, connectivity)
+                #float CLevelSynth.get_layout_energy(CRoomLayout& layout, graph, collide_area, connectivity)
 
-                flagValid = (LayoutCollide(m_layout) <= g_numericalTolerance and CheckRoomConnectivity(m_layout, m_ptrGraph) <= g_numericalTolerance)
-                if flagValid == False:
+                flag_valid = LayoutCollide(self.layout) <= g_numericalTolerance and CheckRoomConnectivity(self.layout, self.graph) <= g_numericalTolerance
+                if not flag_valid:
                     # Skip invalid solution...
                     continue
 
                 DumpSolutionIntoXML()
-                m_solutionCount++
-
+                self.solution_count += 1
 
         else:
-            for (i = int(newStates.size()) - 1; i >= 0; i--)
-                newStates[i].myIndices = indices
-                #newStates[i].m_stateGraph = *m_ptrGraph
-                graphBest = newStates[i].m_stateGraph
-                for (n = 0; n < graphBest.GetNumOfNodes(); n++)
-                    pn = newStates[i].m_stateRoomPositions[n]
+            for (i = int(new_states.size()) - 1; i >= 0; i--):
+                new_states[i].my_indices = indices
+                #new_states[i].state_graph = *self.graph
+                graphBest = new_states[i].state_graph
+                for (n = 0; n < graphBest.GetNumOfNodes(); n++):
+                    pn = new_states[i].state_room_positions[n]
                     graphBest.GetNode(n).SetPos(pn)
 
 
-                layoutBest = GetLayout(&graphBest, newStates[i].m_stateRoomPositions)
+                layout_best = get_layout(&graphBest, new_states[i].state_room_positions)
                 #ofstream fout
 #ifdef DUMP_PARTIAL_SOLUTION
-                graphBest.SaveGraphAsXML(CLevelConfig.AddOutputPrefix(sprint("partial_%03d.xml", numPartials)).c_str())
-                OpenDoors(layoutBest, &graphBest, True)
-                layoutBest.SaveLayoutAsSVG(CLevelConfig.AddOutputPrefix(sprint("partial_%03d.svg", numPartials)).c_str(), 800, 800, True, &graphBest)
+                graphBest.SaveGraphAsXML(CLevelConfig.AddOutputPrefix(sprint(f'partial_%03d.xml', num_partials)).c_str())
+                OpenDoors(layout_best, &graphBest, True)
+                layout_best.SaveLayoutAsSVG(CLevelConfig.AddOutputPrefix(sprint(f'partial_%03d.svg', num_partials)).c_str(), 800, 800, True, &graphBest)
 #endif
                 #m_bestSolCount ++
-                numPartials++
-
-                stateStack.push(newStates[i])
-
+                num_partials += 1
+                state_stack.insert(0, new_states[i])
 
 
-    m_layout = layoutBest
-    m_layout.MoveToSceneCenter()
+
+    self.layout = layout_best
+    self.layout.move_to_scene_centre()
 
 #ifndef PERFORMANCE_TEST
-        std.cout << "Total # of backtracks: " << m_backTrackCount << std.endl
-        ofstream fout
-        fout.open(CLevelConfig.AddOutputPrefix("log.txt").c_str(), std.ios_base.app)
-        fout << "Total # of backtracks: " << m_backTrackCount << std.endl
+        print(f'Total # of backtracks: {self.backtrack_count})
+        #ofstream fout
+        #fout.open(CLevelConfig.AddOutputPrefix('log.txt').c_str(), std.ios_base.app)
+        #fout}Total # of backtracks: {self.backtrack_count << std.endl
 
 #endif
 
 
-def Solve1Dchain(self, indices, weightedIndices, oldState, newStates):
-    if CLevelConfig.m_flagUseILS == True:
-        return Solve1DchainILS(indices, oldState, newStates)
+def solve_1d_chain(self, indices, weighted_indices, old_state, new_states):
+    if FLAG_USE_ILS:
+        return self.solve_1d_chainILS(indices, old_state, new_states)
 
-    ptrGraph = &(oldState.m_stateGraph)
-    SetSequenceAs1Dchain(indices, ptrGraph)
-    newStates.clear()
-    if ptrGraph.GetNode(indices[0]).GetFlagFixed() == True:
-        oldState.InsertToNewStates(newStates, ptrGraph)
+    graph = old_state.state_graph
+    SetSequenceAs1Dchain(indices, graph)
+    new_states.clear()
+    if graph.GetNode(indices[0]).GetFlagFixed():
+        old_state.insert_to_new_states(new_states, graph)
         return True
 
-    flagLastChain = ptrGraph.VisitedAllNodes()
+    flag_last_chain = graph.VisitedAllNodes()
 
     # Number of cycles
     n = CLevelConfig.m_saNumOfCycles
@@ -701,53 +698,51 @@ def Solve1Dchain(self, indices, weightedIndices, oldState, newStates):
     # DeltaE Average
     DeltaE_avg = 0.0
     # Current best result so far
-    layoutBest = GetLayout(ptrGraph, oldState.m_stateRoomPositions)
-    graphBest = *ptrGraph
+    layout_best = get_layout(graph, old_state.state_room_positions)
+    graphBest = *graph
 
     if not CLevelConfig.m_flagRandomWalk:
 #if 0
-		for (i = 0; i < weightedIndices.size(); i++)
-			pickedRoom = layoutBest.GetRoom((*weightedIndices)[i])
-			SampleConfigSpaceForPickedRoom(layoutBest, ptrGraph, indices, (*weightedIndices)[i])
+        for (i = 0; i < weighted_indices.size(); i++):
+            pickedRoom = layout_best.get_room((*weighted_indices)[i])
+            SampleConfigSpaceForPickedRoom(layout_best, graph, indices, (*weighted_indices)[i])
 
 #else # New on 09/24/2013: connect the rooms together as initial guess
-        numOfVisitedNodes = int(indices.size() - weightedIndices.size())
-        if (numOfVisitedNodes == 0) # The first chain...
+        numOfVisitedNodes = int(indices.size() - weighted_indices.size())
+        if (numOfVisitedNodes == 0): # The first chain...
             numOfVisitedNodes = 1
 
         std.vector<int> indicesVisited(numOfVisitedNodes)
-        std.vector<bool> flagsVisited(ptrGraph.GetNumOfNodes(), False)
-        for (i = 0; i < numOfVisitedNodes; i++)
+        std.vector<bool> flagsVisited(graph.GetNumOfNodes(), False)
+        for (i = 0; i < numOfVisitedNodes; i++):
             indicesVisited[i] = indices[i]
             flagsVisited[indices[i]] = True
 
-        while (indicesVisited.size() < indices.size())
+        while (indicesVisited.size() < indices.size()):
             idxUnvisited = -1
             idxVisited = -1
-            for (i = 0; i < int(weightedIndices.size()); i++)
-                idx = (*weightedIndices)[i]
-                if flagsVisited[idx] == True:
+            for (i = 0; i < int(weighted_indices.size()); i++):
+                idx = (*weighted_indices)[i]
+                if flagsVisited[idx]:
                     continue
 
-                std.vector<int> connectedIndices = GetConnectedIndices(ptrGraph, idx, False)
+                std.vector<int> connectedIndices = GetConnectedIndices(graph, idx, False)
                 std.vector<int> visitedNeighbors
-                for (j = 0; j < int(connectedIndices.size()); j++)
+                for (j = 0; j < int(connectedIndices.size()); j++):
                     idxOther = connectedIndices[j]
-                    if flagsVisited[idxOther] == True:
+                    if flagsVisited[idxOther]:
                         visitedNeighbors.push_back(idxOther)
 
-
-                if visitedNeighbors.empty() == False:
+                if not visitedNeighbors.empty():
                     idxUnvisited = idx
-                    roomUnvisited = layoutBest.GetRoom(idxUnvisited)
+                    roomUnvisited = layout_best.get_room(idxUnvisited)
                     random_shuffle(visitedNeighbors.begin(), visitedNeighbors.end())
-                    CConfigSpace configSpace(layoutBest.GetRoom(visitedNeighbors[0]), roomUnvisited)
-                    for (j = 1; j < int(visitedNeighbors.size()); j++)
-                        CConfigSpace configSpaceTmp(layoutBest.GetRoom(visitedNeighbors[j]), roomUnvisited)
+                    CConfigSpace configSpace(layout_best.get_room(visitedNeighbors[0]), roomUnvisited)
+                    for (j = 1; j < int(visitedNeighbors.size()); j++):
+                        CConfigSpace configSpaceTmp(layout_best.get_room(visitedNeighbors[j]), roomUnvisited)
                         configSpaceNew = CConfigSpace.FindIntersection(configSpace, configSpaceTmp)
-                        if configSpaceNew.IsEmpty() == True:
+                        if configSpaceNew.IsEmpty():
                             break
-
                         else:
                             configSpace = configSpaceNew
 
@@ -757,183 +752,172 @@ def Solve1Dchain(self, indices, weightedIndices, oldState, newStates):
     #if 1 # Smartly sample the configuration space based on the energy...
                     std.vector<v2f> vecPos = configSpace.SmartlySampleConfigSpace()
                     idxBest = -1
-                    energyMin = 1e10
-                    graphTmp = *ptrGraph
-                    for (j = 0; j < graphTmp.GetNumOfNodes(); j++)
-                        graphTmp.GetNode(j).SetFlagVisited(flagsVisited[j])
+                    energy_min = 1e10
+                    graph_tmp = *graph
+                    for (j = 0; j < graph_tmp.GetNumOfNodes(); j++):
+                        graph_tmp.GetNode(j).SetFlagVisited(flagsVisited[j])
 
-                    for (j = 0; j < int(vecPos.size()); j++)
-                        layoutTmp = layoutBest
-                        pickedRoomTmp = layoutTmp.GetRoom(idxUnvisited)
-                        dp = vecPos[j] - pickedRoomTmp.GetRoomCenter()
-                        pickedRoomTmp.TranslateRoom(dp)
-                        collideArea = 0.f
+                    for (j = 0; j < int(vecPos.size()); j++):
+                        layout_tmp = layout_best
+                        pickedRoomTmp = layout_tmp.get_room(idxUnvisited)
+                        dp = vecPos[j] - pickedRoomTmp.get_room_centre()
+                        pickedRoomTmp.translate_room(dp)
+                        collide_area = 0.f
                         connectivity = 0.f
-                        energyTmp = GetLayoutEnergy(layoutTmp, &graphTmp, collideArea, connectivity)
-                        if collideArea < energyMin:
-                            energyMin = collideArea
+                        energy_tmp = get_layout_energy(layout_tmp, &graph_tmp, collide_area, connectivity)
+                        if collide_area < energy_min:
+                            energy_min = collide_area
                             idxBest = j
 
 
                     if idxBest >= 0:
-                        dp = vecPos[idxBest] - roomUnvisited.GetRoomCenter()
-                        roomUnvisited.TranslateRoom(dp)
+                        dp = vecPos[idxBest] - roomUnvisited.get_room_centre()
+                        roomUnvisited.translate_room(dp)
 
     #else:
                     pos = configSpace.RandomlySampleConfigSpace()
-                    dp = pos - roomUnvisited.GetRoomCenter()
-                    roomUnvisited.TranslateRoom(dp)
+                    dp = pos - roomUnvisited.get_room_centre()
+                    roomUnvisited.translate_room(dp)
     #endif
                     break
 
-
-
 #endif
-
-
-    m_layout = layoutBest
+    self.layout = layout_best
 #ifdef DUMP_INTERMEDIATE_OUTPUT
-    layoutBest.SaveLayoutAsSVG(CLevelConfig.AddOutputPrefix(sprint("chainInit_%03d.svg", m_chainCount)).c_str())
+    layout_best.SaveLayoutAsSVG(CLevelConfig.AddOutputPrefix(sprint(f'chainInit_%03d.svg', self.chain_count)).c_str())
 #endif
-    collideArea = 0.f
-    connectivity = 0.f
-    energyMin = GetLayoutEnergy(layoutBest, ptrGraph, collideArea, connectivity, -1, True, &indices)
-    energyCurrent = energyMin
+    collide_area = 0.0
+    connectivity = 0.0
+    energy_min = self.get_layout_energy(layout_best, graph, collide_area, connectivity, -1, True, indices)
+    energy_current = energy_min
 #ifdef DUMP_INTERMEDIATE_OUTPUT
-    std.cout << "Initial energy: " << energyMin << std.endl
-    std.ofstream fout
-    fout.open(CLevelConfig.AddOutputPrefix("log.txt").c_str(), std.ios_base.app)
-    fout << m_bestSolCount << "\t" << energyMin << std.endl
-    for (n = 0; n < ptrGraph.GetNumOfNodes(); n++)
-        pn = layoutBest.GetRoomPositions()[n]
-        ptrGraph.GetNode(n).SetPos(pn)
+    print(f'Initial energy: {energy_min}')
+    #std.ofstream fout
+    ##fout.open(CLevelConfig.AddOutputPrefix('log.txt').c_str(), std.ios_base.app)
+    #fout << m_bestSolCount}\t{energy_min << std.endl
+    for (n = 0; n < graph.GetNumOfNodes(); n++):
+        pn = layout_best.get_room_positions()[n]
+        graph.GetNode(n).SetPos(pn)
 
-    ptrGraph.SaveGraphAsXML(CLevelConfig.AddOutputPrefix(sprint("tmpBest_%03d.xml", m_bestSolCount)).c_str())
-    OpenDoors(layoutBest, ptrGraph, True)
-    layoutBest.SaveLayoutAsSVG(CLevelConfig.AddOutputPrefix(sprint("tmpBest_%03d.svg", m_bestSolCount)).c_str())
+    graph.SaveGraphAsXML(CLevelConfig.AddOutputPrefix(sprint(f'tmpBest_%03d.xml', m_bestSolCount)).c_str())
+    OpenDoors(layout_best, graph, True)
+    layout_best.SaveLayoutAsSVG(CLevelConfig.AddOutputPrefix(sprint(f'tmpBest_%03d.svg', m_bestSolCount)).c_str())
     m_bestSolCount++
 #endif
-    pickIndexCount = 0
-    numFailures = 0
-    for (i = 0; i < n; i++)
+    pick_index_count = 0
+    num_failures = 0
+    for (i = 0; i < n; i++):
 #ifndef PERFORMANCE_TEST
-        std.cout << "Cycle " << i + 1 << "/" << n << " (failures " << numFailures << ") ...\n"
+        print(f'Cycle {i + 1}/{n} (failures {num_failures}) ...\n')
 #endif
-        flagWasAccepted = False
-        if numFailures > 10:
+        flag_was_accepted = False
+        if num_failures > 10:
             if Random2(2) == 0:
 #ifndef PERFORMANCE_TEST
-                std.cout << "RANDOM RESTART CALLEDnot  11+ failures" << std.endl
+                print(f'RANDOM RESTART CALLED! 11+ failures')
 #endif
                 break
 
 
-        elif numFailures > 8:
+        elif num_failures > 8:
             if Random2(3) == 0:
 #ifndef PERFORMANCE_TEST
-                std.cout << "RANDOM RESTART CALLEDnot  9+ failures" << std.endl
+                print(f'RANDOM RESTART CALLED!  9+ failures')
 #endif
                 break
 
 
-        elif numFailures > 5:
+        elif num_failures > 5:
             if Random2(4) == 0:
 #ifndef PERFORMANCE_TEST
-                std.cout << "RANDOM RESTART CALLEDnot  6+ failures" << std.endl
+                print(f'RANDOM RESTART CALLED!  6+ failures')
 #endif
                 break
 
 
-        elif numFailures > 3:
+        elif num_failures > 3:
             if Random2(6) == 0:
 #ifndef PERFORMANCE_TEST
-                std.cout << "RANDOM RESTART CALLEDnot  4+ failures" << std.endl
+                print(f'RANDOM RESTART CALLED!  4+ failures')
 #endif
                 break
 
 
-        elif numFailures > 0:
+        elif num_failures > 0:
             if Random2(8) == 0:
 #ifndef PERFORMANCE_TEST
-                std.cout << "RANDOM RESTART CALLED: 1 failure but we just felt like quittin'..." << std.endl
+                print(f'RANDOM RESTART CALLED: 1 failure but we just felt like quittin')
 #endif
                 break
 
-
-
-        for (j = 0; j < m; j++)
-            graphTmp = *ptrGraph
-            layoutTmp = m_layout
-            adjustedIndex = RandomlyAdjustOneRoom(layoutTmp, &graphTmp, indices, weightedIndices)
+        for (j = 0; j < m; j++):
+            graph_tmp = graph
+            layout_tmp = self.layout
+            adjusted_index = RandomlyAdjustOneRoom(layout_tmp, &graph_tmp, indices, weighted_indices)
 #if 0 # New on 08/16/2013
-			if  m_flagVisitedNoNode == True :
-				v2f pMin(1e10)
-				v2f pMax(-1e10)
-				for ( int d=0; d<int(indices.size()); d++ )
-					idx = indices[d]
-					pj = layoutTmp.GetRoom(idx).GetRoomCenter()
-					for ( int k=0; k<2; k++ )
-						pMin[k] = min(pMin[k], pj[k])
-						pMax[k] = max(pMax[k], pj[k])
+            if self.flag_visited_node:
+                p_min = Vector2(1e10, 1e10)
+                p_max = Vector2(-1e10, -1e10)
+                for d in range(len(indices)):
+                    idx = indices[d]
+                    pj = layout_tmp.get_room(idx).get_room_centre()
+                    for k in range(2):
+                        p_min[k] = min(p_min[k], pj[k])
+                        p_max[k] = max(p_max[k], pj[k])
 
-
-				posCen = (pMin + pMax) * 0.5f
-				for ( int d=0; d<int(indices.size()); d++ )
-					idx = indices[d]
-					layoutTmp.GetRoom(idx).TranslateRoom(-posCen)
-
+                pos_cen = (p_min + p_max) * 0.5f
+                for d in range(len(indices)):
+                    idx = indices[d]
+                    layout_tmp.get_room(idx).translate_room(-pos_cen)
 
 #endif
-            energyTmp = GetLayoutEnergy(layoutTmp, &graphTmp, collideArea, connectivity, adjustedIndex, True, &indices)
+            energy_tmp = get_layout_energy(layout_tmp, graph_tmp, collide_area, connectivity, adjusted_index, True, indices)
 
-            # accept = GetLayoutEnergyEarlyOut(layoutTmp, &graphTmp, collideArea, connectivity, adjustedIndex, &energyTmp, energyCurrent )
+            # accept = get_layout_energyEarlyOut(layout_tmp, &graph_tmp, collide_area, connectivity, adjusted_index, &energy_tmp, energy_current )
 
-            if ((CLevelConfig.m_flagRandomWalk and collideArea <= 1e-3 and connectivity <= 1e-3) or
-                (collideArea <= 1e-4 and connectivity <= 1e-4))
-                newState = oldState
-                newState.m_stateGraph = graphTmp
-                newState.m_stateRoomPositions = layoutTmp.GetRoomPositions()
-                newState.m_stateEnergy = energyTmp
-                newState.MoveRoomsToSceneCenter(&graphTmp)
-                newState.InsertToNewStates(newStates, &graphTmp)
-                if newStates.size() >= CLevelConfig.m_numOfSolutionsToTrack:
+            if ((CLevelConfig.m_flagRandomWalk and collide_area <= 1e-3 and connectivity <= 1e-3) or
+                (collide_area <= 1e-4 and connectivity <= 1e-4)):
+                new_state = old_state
+                new_state.state_graph = graph_tmp
+                new_state.state_room_positions = layout_tmp.get_room_positions()
+                new_state.state_energy = energy_tmp
+                new_state.move_rooms_to_scene_center(graph_tmp)
+                new_state.insert_to_new_states(new_states, graph_tmp)
+                if new_states.size() >= CLevelConfig.m_numOfSolutionsToTrack:
                     return True
 
-                if flagLastChain == True and (m_solutionCount + int(newStates.size()) >= CLevelConfig.m_targetNumOfSolutions):
+                if flag_last_chain and (self.solution_count + int(new_states.size()) >= CLevelConfig.TARGET_NUM_SOLUTIONS):
                     return True
 
-                #newStates.push_back(newState)
+                #new_states.push_back(new_state)
 
-            flagAccept = False
+            flag_accept = False
 
-            if energyTmp < energyCurrent:
+            if energy_tmp < energy_current:
                 # Energy is lower, accept
-                flagAccept = True
-                if energyTmp < energyMin:
-                    energyMin = energyTmp
+                flag_accept = True
+                if energy_tmp < energy_min:
+                    energy_min = energy_tmp
 #ifndef PERFORMANCE_TEST
-                    std.cout << "A minimum energy: " << energyMin << std.endl
+                    print(f'A minimum energy: {energy_min}')
 #endif
 #ifdef DUMP_INTERMEDIATE_OUTPUT
-                    layoutBest = layoutTmp
-                    graphBest = graphTmp
-                    for (n = 0; n < graphBest.GetNumOfNodes(); n++)
-                        pn = layoutBest.GetRoomPositions()[n]
+                    layout_best = layout_tmp
+                    graphBest = graph_tmp
+                    for (n = 0; n < graphBest.GetNumOfNodes(); n++):
+                        pn = layout_best.get_room_positions()[n]
                         graphBest.GetNode(n).SetPos(pn)
 
-
-                    std.ofstream fout
-                    fout.open(CLevelConfig.AddOutputPrefix("log.txt").c_str(), std.ios_base.app)
-                    fout << m_bestSolCount << "\t" << energyMin << std.endl
-                    graphBest.SaveGraphAsXML(CLevelConfig.AddOutputPrefix(sprint("tmpBest_%03d.xml", m_bestSolCount)).c_str())
-                    OpenDoors(layoutBest, &graphBest, True)
-                    layoutBest.SaveLayoutAsSVG(CLevelConfig.AddOutputPrefix(sprint("tmpBest_%03d.svg", m_bestSolCount)).c_str())
+                    #std.ofstream fout
+                    ##fout.open(CLevelConfig.AddOutputPrefix('log.txt').c_str(), std.ios_base.app)
+                    #fout << m_bestSolCount}\t{energy_min << std.endl
+                    graphBest.SaveGraphAsXML(CLevelConfig.AddOutputPrefix(sprint(f'tmpBest_%03d.xml', m_bestSolCount)).c_str())
+                    OpenDoors(layout_best, &graphBest, True)
+                    layout_best.SaveLayoutAsSVG(CLevelConfig.AddOutputPrefix(sprint(f'tmpBest_%03d.svg', m_bestSolCount)).c_str())
                     m_bestSolCount++
 #endif
-
-
             else:
-                DeltaE = std.abs(energyTmp - energyCurrent)
+                DeltaE = std.abs(energy_tmp - energy_current)
 
                 # Energy is higher...
                 if i == 0 and j == 0:
@@ -941,185 +925,181 @@ def Solve1Dchain(self, indices, weightedIndices, oldState, newStates):
                     DeltaE_avg *= CLevelConfig.m_deltaEscaling
 
                 # Generate probability of acceptance...
-                prob = exp(-(energyTmp - energyCurrent) / (DeltaE_avg * t))
+                prob = exp(-(energy_tmp - energy_current) / (DeltaE_avg * t))
                 r = rand() / float(RAND_MAX)
                 if r < prob:
-                    flagAccept = True
-
+                    flag_accept = True
                 else:
-                    flagAccept = False
+                    flag_accept = False
 
+            if flag_accept:
+                DeltaE = std.abs(energy_tmp - energy_current)
 
-            if flagAccept == True:
-                DeltaE = std.abs(energyTmp - energyCurrent)
-
-                m_layout = layoutTmp
-                *ptrGraph = graphTmp
-                energyCurrent = energyTmp
+                self.layout = layout_tmp
+                graph = graph_tmp
+                energy_current = energy_tmp
                 if DeltaE != 0.0:
-                    na++
+                    na += 1
                     DeltaE_avg = (DeltaE_avg * (na - 1.0f) + DeltaE) / float(na)
+                flag_was_accepted = True
 
-                flagWasAccepted = True
+            pick_index_count +=1
+            pick_index_count = pick_index_count % int(len(indices))
 
-
-            pickIndexCount++
-            pickIndexCount = pickIndexCount % int(indices.size())
-
-        if flagWasAccepted == False:
-            numFailures++
+        if not flag_was_accepted:
+            num_failures += 1
 
         # Lower the temperature for next cycle
         t *= frac
 
 #ifndef PERFORMANCE_TEST
-    std.cout << "Final energy: " << energyMin << std.endl
+    print(f'Final energy: {energy_min}')
 #endif
-    if newStates.empty() == True:
+    if not new_states:
 #ifdef DUMP_INTERMEDIATE_OUTPUT
-        std.cout << "Empty solution setnot \n"
-        graphBest.SaveGraphAsXML(CLevelConfig.AddOutputPrefix(sprint("backTracking_level%02d_%03d.xml", m_backTrackLevel, m_backTrackCount)).c_str())
-        for (n = 0; n < graphBest.GetNumOfNodes(); n++)
+        print(f'Empty solution set!')
+        graphBest.SaveGraphAsXML(CLevelConfig.AddOutputPrefix(sprint(f'backTracking_level%02d_%03d.xml', self.backtrack_level, self.backtrack_count)).c_str())
+        for (n = 0; n < graphBest.GetNumOfNodes(); n++):
             graphBest.GetNode(n).SetFlagVisited(False)
 
-        for (n = 0; n < int(indices.size()); n++)
+        for (n = 0; n < int(indices.size()); n++):
             graphBest.GetNode(indices[n]).SetFlagVisited(True)
 
-        for (n = 0; n < int(weightedIndices.size()); n++)
-            graphBest.GetNode((*weightedIndices)[n]).SetFlagVisited(False)
+        for (n = 0; n < int(weighted_indices.size()); n++):
+            graphBest.GetNode((*weighted_indices)[n]).SetFlagVisited(False)
 
-        layoutBest.SaveLayoutAsSVG(CLevelConfig.AddOutputPrefix(sprint("backTracking_level%02d_%03d.svg", m_backTrackLevel, m_backTrackCount)).c_str())
-        layoutBest.SaveLayoutAsSVG(CLevelConfig.AddOutputPrefix(sprint("backTrackingPartial_level%02d_%03d.svg", m_backTrackLevel, m_backTrackCount)).c_str(), 400, 400, True, &graphBest)
+        layout_best.SaveLayoutAsSVG(CLevelConfig.AddOutputPrefix(sprint(f'backTracking_level%02d_%03d.svg', self.backtrack_level, self.backtrack_count)).c_str())
+        layout_best.SaveLayoutAsSVG(CLevelConfig.AddOutputPrefix(sprint(f'backTrackingPartial_level%02d_%03d.svg', self.backtrack_level, self.backtrack_count)).c_str(), 400, 400, True, &graphBest)
 #endif
         return False
 
 #ifndef PERFORMANCE_TEST
-    std.cout << "Number of valid states: " << newStates.size() << std.endl
+    print(f'Number of valid states: {len(new_states)})
 #endif
-    sort(newStates.begin(), newStates.end(), CompareStateEnergySmallerFirst)
-    numOfSolutionsToTrack = min(int(newStates.size()), CLevelConfig.m_numOfSolutionsToTrack)
-    std.vector<CurrentState> newerStates(numOfSolutionsToTrack)
-    for (i = 0; i < numOfSolutionsToTrack; i++)
-        newerStates[i] = newStates[i]
+    sort(new_states.begin(), new_states.end(), CompareStateEnergySmallerFirst)
+    numOfSolutionsToTrack = min(int(new_states.size()), CLevelConfig.m_numOfSolutionsToTrack)
+    std.vector<CurrentState> newer_states(numOfSolutionsToTrack)
+    for (i = 0; i < numOfSolutionsToTrack; i++):
+        newer_states[i] = new_states[i]
 
-    newStates = newerStates
+    new_states = newer_states
 
     return True
 
 
-def Solve1DchainILS(self, indices, oldState, newStates):
-    ptrGraph = &(oldState.m_stateGraph)
-    SetSequenceAs1Dchain(indices, ptrGraph)
-    newStates.clear()
-    if ptrGraph.GetNode(indices[0]).GetFlagFixed() == True:
-        oldState.InsertToNewStates(newStates, ptrGraph)
+def self.solve_1d_chainILS(self, indices, old_state, new_states):
+    graph = &(old_state.state_graph)
+    SetSequenceAs1Dchain(indices, graph)
+    new_states.clear()
+    if graph.GetNode(indices[0]).GetFlagFixed() == True:
+        old_state.insert_to_new_states(new_states, graph)
         return True
 
 
     # Borrow the parameters from simulated annealing...
      n = CLevelConfig.m_saNumOfCycles
      m = CLevelConfig.m_saNumOfTrials
-    # CRoomLayout layoutBest; # Current best result so far
-    collideArea = 0.f
+    # CRoomLayout layout_best; # Current best result so far
+    collide_area = 0.f
     connectivity = 0.f
-    energyMin = 1e10
+    energy_min = 1e10
     energyHistory = 1e10
-    pickIndexCount = 0
-    for (i = 0; i < n; i++)
-        layoutHistory = m_layout
-        graphHistory = *ptrGraph
+    pick_index_count = 0
+    for (i = 0; i < n; i++):
+        layoutHistory = self.layout
+        graphHistory = *graph
         if i != 0:
             # Introduce perturbation...
-            RandomlyAdjustOneRoom(m_layout, ptrGraph, indices, NULL)
+            RandomlyAdjustOneRoom(self.layout, graph, indices, NULL)
 
-        energyTmp = GetLayoutEnergy(m_layout, ptrGraph, collideArea, connectivity)
-        energyCurrent = energyTmp
+        energy_tmp = get_layout_energy(self.layout, graph, collide_area, connectivity)
+        energy_current = energy_tmp
         if i == 0:
-            energyMin = energyCurrent
-            std.cout << "Initial energy: " << energyCurrent << std.endl
+            energy_min = energy_current
+            print(f'Initial energy: {energy_current}')
 
-        for (j = 0; j < m; j++)
-            graphTmp = *ptrGraph
-            layoutTmp = m_layout
-            RandomlyAdjustOneRoom(layoutTmp, &graphTmp, indices, NULL)
+        for (j = 0; j < m; j++):
+            graph_tmp = *graph
+            layout_tmp = self.layout
+            RandomlyAdjustOneRoom(layout_tmp, &graph_tmp, indices, NULL)
 #if 1 # New on 08/16/2013
-            if m_flagVisitedNoNode == True:
-                v2f pMin(1e10)
-                v2f pMax(-1e10)
-                for (d = 0; d < int(indices.size()); d++)
+            if self.flag_visited_node == True:
+                v2f p_min(1e10)
+                v2f p_max(-1e10)
+                for (d = 0; d < int(indices.size()); d++):
                     idx = indices[d]
-                    pj = layoutTmp.GetRoom(idx).GetRoomCenter()
-                    for (k = 0; k < 2; k++)
-                        pMin[k] = min(pMin[k], pj[k])
-                        pMax[k] = max(pMax[k], pj[k])
+                    pj = layout_tmp.get_room(idx).get_room_centre()
+                    for (k = 0; k < 2; k++):
+                        p_min[k] = min(p_min[k], pj[k])
+                        p_max[k] = max(p_max[k], pj[k])
 
 
-                posCen = (pMin + pMax) * 0.5f
-                for (d = 0; d < int(indices.size()); d++)
+                pos_cen = (p_min + p_max) * 0.5f
+                for (d = 0; d < int(indices.size()); d++):
                     idx = indices[d]
-                    layoutTmp.GetRoom(idx).TranslateRoom(-posCen)
+                    layout_tmp.get_room(idx).translate_room(-pos_cen)
 
 
 #endif
-            energyTmp = GetLayoutEnergy(layoutTmp, &graphTmp, collideArea, connectivity)
-            if collideArea <= g_numericalTolerance and connectivity <= g_numericalTolerance:
-                newState = oldState
-                newState.m_stateGraph = *ptrGraph
-                newState.m_stateRoomPositions = layoutTmp.GetRoomPositions()
-                newState.m_stateEnergy = energyTmp
-                newState.MoveRoomsToSceneCenter(ptrGraph)
-                newState.InsertToNewStates(newStates, ptrGraph)
+            energy_tmp = get_layout_energy(layout_tmp, &graph_tmp, collide_area, connectivity)
+            if collide_area <= g_numericalTolerance and connectivity <= g_numericalTolerance:
+                new_state = old_state
+                new_state.state_graph = *graph
+                new_state.state_room_positions = layout_tmp.get_room_positions()
+                new_state.state_energy = energy_tmp
+                new_state.move_rooms_to_scene_center(graph)
+                new_state.insert_to_new_states(new_states, graph)
 
-            if energyTmp < energyCurrent:
-                if energyTmp < energyMin:
-                    # layoutBest = layoutTmp
-                    energyMin = energyTmp
+            if energy_tmp < energy_current:
+                if energy_tmp < energy_min:
+                    # layout_best = layout_tmp
+                    energy_min = energy_tmp
 #ifndef PERFORMANCE_TEST
-                    std.cout << "A minimum energy: " << energyMin << std.endl
+                    print(f'A minimum energy: {energy_min}')
 #endif
 
-                m_layout = layoutTmp
-                *ptrGraph = graphTmp
-                energyCurrent = energyTmp
+                self.layout = layout_tmp
+                *graph = graph_tmp
+                energy_current = energy_tmp
 
-            pickIndexCount++
-            pickIndexCount = pickIndexCount % int(indices.size())
+            pick_index_count++
+            pick_index_count = pick_index_count % int(indices.size())
 
-        if i == 0 or energyMin < energyHistory:
-            energyHistory = energyMin
+        if i == 0 or energy_min < energyHistory:
+            energyHistory = energy_min
 
         else:
-            m_layout = layoutHistory
-            *ptrGraph = graphHistory
+            self.layout = layoutHistory
+            *graph = graphHistory
 
 
-    std.cout << "Final energy: " << energyMin << std.endl
-    if newStates.empty() == True:
-        std.cout << "Empty solution setnot \n"
+    print(f'Final energy: {energy_min}')
+    if new_states.empty() == True:
+        print(f'Empty solution setnot \n'
         return False
 
-    std.cout << "Number of valid states: " << newStates.size() << std.endl
-    sort(newStates.begin(), newStates.end(), CompareStateEnergySmallerFirst)
-    numOfSolutionsToTrack = min(int(newStates.size()), CLevelConfig.m_numOfSolutionsToTrack)
-    std.vector<CurrentState> newerStates
-    for (i = 0; i < numOfSolutionsToTrack; i++)
-        newerStates.push_back(newStates[i])
+    print(f'Number of valid states: {len(new_states)}')
+    sort(new_states.begin(), new_states.end(), CompareStateEnergySmallerFirst)
+    numOfSolutionsToTrack = min(int(new_states.size()), CLevelConfig.m_numOfSolutionsToTrack)
+    std.vector<CurrentState> newer_states
+    for (i = 0; i < numOfSolutionsToTrack; i++):
+        newer_states.push_back(new_states[i])
 
-    newStates = newerStates
+    new_states = newer_states
 
     return True
 
 
-def SetCurrentState(self, s):
-    *m_ptrGraph = s.m_stateGraph
-    m_roomPositions = s.m_stateRoomPositions
-    m_layout = GetLayout(m_ptrGraph, m_roomPositions)
+def set_current_state(self, s):
+    self.graph = s.state_graph
+    self.room_positions = s.state_room_positions
+    self.layout = get_layout(self.graph, room_positions)
 
 
-def SetSequenceAs1Dchain(self, indices, ptrGraph):
+def SetSequenceAs1Dchain(self, indices, graph):
     m_sequence.clear()
-    for (i = 0; i < int(indices.size()); i++)
-        idx = ptrGraph.GetNode(indices[i]).GetType()
+    for (i = 0; i < int(indices.size()); i++):
+        idx = graph.GetNode(indices[i]).GetType()
         idx = idx % m_ptrTemplates.GetNumOfTemplates()
         m_sequence.push_back(idx)
 
@@ -1128,12 +1108,12 @@ def SetSequenceAs1Dchain(self, indices, ptrGraph):
 def SetVisitedNeighbors(self, indices):
     m_visitedNeighbors.clear()
     m_visitedNeighbors.resize(indices.size())
-    for (i = 0; i < int(m_visitedNeighbors.size()); i++)
+    for (i = 0; i < int(m_visitedNeighbors.size()); i++):
         nodeIdx = indices[i]
-        std.vector<int>neighbors = m_ptrGraph.GetNode(nodeIdx).GetNeighbors()
-        for (j = 0; j < int(neighbors.size()); j++)
+        std.vector<int>neighbors = self.graph.GetNode(nodeIdx).GetNeighbors()
+        for (j = 0; j < int(neighbors.size()); j++):
             neighborIdx = neighbors[j]
-            if m_ptrGraph.GetNode(neighborIdx).GetFlagVisited() == True:
+            if self.graph.GetNode(neighborIdx).GetFlagVisited() == True:
                 m_visitedNeighbors[i].push_back(neighborIdx)
 
 
@@ -1141,46 +1121,44 @@ def SetVisitedNeighbors(self, indices):
 
 
 def DumpSolutionIntoXML(self):
-    graphSol = *m_ptrGraph
-    for (i = 0; i < graphSol.GetNumOfNodes(); i++)
-        pi = m_roomPositions[i]
+    graphSol = *self.graph
+    for (i = 0; i < graphSol.GetNumOfNodes(); i++):
+        pi = room_positions[i]
         graphSol.GetNode(i).SetPos(pi[0], pi[1])
 
-    graphSol.SaveGraphAsXML(CLevelConfig.AddOutputPrefix(sprint("dbg_%03d.xml", m_solutionCount)).c_str())
-    layoutSol = GetLayout(m_ptrGraph, m_roomPositions)
-    OpenDoors(layoutSol, m_ptrGraph)
-    layoutSol.SaveLayoutAsSVG(CLevelConfig.AddOutputPrefix(sprint("dbg_%03d.svg", m_solutionCount)).c_str())
+    graphSol.SaveGraphAsXML(CLevelConfig.AddOutputPrefix(sprint(f'dbg_%03d.xml', self.solution_count)).c_str())
+    layoutSol = get_layout(self.graph, room_positions)
+    OpenDoors(layoutSol, self.graph)
+    layoutSol.SaveLayoutAsSVG(CLevelConfig.AddOutputPrefix(sprint(f'dbg_%03d.svg', self.solution_count)).c_str())
 
 
-def RandomlyPickOneRoom(self, layout):
-    numOfRooms = layout.GetNumOfRooms()
-    pickedRoomIndex = int(rand() / float(RAND_MAX) * numOfRooms)
-    pickedRoomIndex = pickedRoomIndex % numOfRooms
-    return pickedRoomIndex
+def randomly_pick_one_room(self, layout):
+    picked_room_index = random.randint(0, layout.num_rooms - 1)
+    return picked_room_index
 
 
-def RandomlyPickOneRoom(self, layout, indices, weightedIndices):
-    if weightedIndices:
-        std.vector<int> tmpIndices = *weightedIndices
-        chainLength = int(tmpIndices.size())
-        for (i = 0; i < indices.size(); i++)
-            energyTmp = layout.GetRoom(indices[i]).GetEnergy()
-            if energyTmp > 1.1:
-                tmpIndices.push_back(indices[i])
+def randomly_pick_one_room(self, layout, indices, weighted_indices):
+    if weighted_indices:
+        std.vector<int> tmp_indices = *weighted_indices
+        chainLength = int(tmp_indices.size())
+        for (i = 0; i < indices.size(); i++):
+            energy_tmp = layout.get_room(indices[i]).GetEnergy()
+            if energy_tmp > 1.1:
+                tmp_indices.push_back(indices[i])
 
 
 
-        pickedRoomIndex = int(rand() / float(RAND_MAX) * chainLength)
-        pickedRoomIndex = pickedRoomIndex % chainLength
-        pickedRoomIndex = (tmpIndices)[pickedRoomIndex]
-        return pickedRoomIndex
+        picked_room_index = int(rand() / float(RAND_MAX) * chainLength)
+        picked_room_index = picked_room_index % chainLength
+        picked_room_index = (tmp_indices)[picked_room_index]
+        return picked_room_index
 
     else:
         chainLength = int(indices.size())
-        pickedRoomIndex = int(rand() / float(RAND_MAX) * chainLength)
-        pickedRoomIndex = pickedRoomIndex % chainLength
-        pickedRoomIndex = indices[pickedRoomIndex]
-        return pickedRoomIndex
+        picked_room_index = int(rand() / float(RAND_MAX) * chainLength)
+        picked_room_index = picked_room_index % chainLength
+        picked_room_index = indices[picked_room_index]
+        return picked_room_index
 
 
 
@@ -1190,21 +1168,20 @@ def RandomlyPickAnotherRoom(self, layout, pickedIndex):
     while (otherRoomIndex == pickedIndex)
         otherRoomIndex = int(rand() / float(RAND_MAX) * numOfRooms)
         otherRoomIndex = otherRoomIndex % numOfRooms
-
     return otherRoomIndex
 
 
-def GetConnectedIndices(self, ptrGraph, pickedIndex, flagVisitedOnly ''' = True '''):
+def GetConnectedIndices(self, graph, pickedIndex, flagVisitedOnly ''' = True '''):
     std.vector<int> indices
-    for (i = 0; i < ptrGraph.GetNumOfEdges(); i++)
-        edge = ptrGraph.GetEdge(i)
+    for (i = 0; i < graph.GetNumOfEdges(); i++):
+        edge = graph.GetEdge(i)
         idx0 = edge.GetIdx0()
         idx1 = edge.GetIdx1()
         if idx0 != pickedIndex and idx1 != pickedIndex:
             continue
 
         idx = (idx0 == pickedIndex) ? idx1 : idx0
-        if ptrGraph.GetNode(idx).GetFlagVisited() == False and flagVisitedOnly == True:
+        if graph.GetNode(idx).GetFlagVisited() == False and flagVisitedOnly == True:
             continue
 
         indices.push_back(idx)
@@ -1212,7 +1189,7 @@ def GetConnectedIndices(self, ptrGraph, pickedIndex, flagVisitedOnly ''' = True 
     return indices
 
 
-def RandomlyAdjustOneRoom(self, layout, ptrGraph, indices, weightedIndices):
+def RandomlyAdjustOneRoom(self, layout, graph, indices, weighted_indices):
     numOfRooms = layout.GetNumOfRooms()
     if numOfRooms <= 1:
         return -1
@@ -1221,33 +1198,33 @@ def RandomlyAdjustOneRoom(self, layout, ptrGraph, indices, weightedIndices):
     r = rand() / float(RAND_MAX)
 
 #if 0 # Before 07/16/2013
-	if  r < 0.25f :
-		RandomlyAdjustOneRoom01(layout, ptrGraph, indices)
+    if  r < 0.25f :
+        RandomlyAdjustOneRoom01(layout, graph, indices)
 
-	elif  r < 0.5f :
-		RandomlyAdjustOneRoom02(layout, ptrGraph, indices)
+    elif  r < 0.5f :
+        RandomlyAdjustOneRoom02(layout, graph, indices)
 
-	elif  r < 0.75f or CLevelConfig.m_flagEnableTypeChange == False :
+    elif  r < 0.75f or CLevelConfig.m_flagEnableTypeChange == False :
 #else:
     if (r < 0.75f or CLevelConfig.m_flagEnableTypeChange == False) # nv: was 0.9
 #endif
         if CLevelConfig.m_flagRandomWalk == False:
-            return RandomlyAdjustOneRoom03(layout, ptrGraph, indices, weightedIndices)
+            return RandomlyAdjustOneRoom03(layout, graph, indices, weighted_indices)
 
         else:
-            return GradientDescentOneRoom(layout, ptrGraph, *weightedIndices)
+            return GradientDescentOneRoom(layout, graph, *weighted_indices)
 
 
     else:
-        return RandomlyAdjustOneRoom04(layout, ptrGraph, indices, weightedIndices)
+        return RandomlyAdjustOneRoom04(layout, graph, indices, weighted_indices)
 
 
 
-def RandomlyAdjustOneRoom01(self, layout, ptrGraph, indices):
-    pickedRoomIndex = RandomlyPickOneRoom(layout, indices, NULL)
-    pickedRoom = layout.GetRoom(pickedRoomIndex)
+def RandomlyAdjustOneRoom01(self, layout, graph, indices):
+    picked_room_index = randomly_pick_one_room(layout, indices, NULL)
+    pickedRoom = layout.get_room(picked_room_index)
 
-    for (i = 0; i < pickedRoom.GetNumOfEdges(); i++)
+    for (i = 0; i < pickedRoom.GetNumOfEdges(); i++):
         edge = pickedRoom.GetEdge(i)
         pr2 = edge.GetPos2() - edge.GetPos1()
         pr = v3f(pr2[0], pr2[1], 0.f)
@@ -1255,13 +1232,13 @@ def RandomlyAdjustOneRoom01(self, layout, ptrGraph, indices):
         norm = normalize(norm)
         distMin = 1e10
         CRoomEdge edgeNearest
-        for (j = 0; j < layout.GetNumOfRooms(); j++)
-            if j == pickedRoomIndex:
+        for (j = 0; j < layout.GetNumOfRooms(); j++):
+            if j == picked_room_index:
                 continue
 
-            if (ptrGraph.GetNode(j).GetFlagVisited() == False) continue
-            otherRoom = layout.GetRoom(j)
-            for (k = 0; k < otherRoom.GetNumOfEdges(); k++)
+            if (graph.GetNode(j).GetFlagVisited() == False) continue
+            otherRoom = layout.get_room(j)
+            for (k = 0; k < otherRoom.GetNumOfEdges(); k++):
                 otherEdge = otherRoom.GetEdge(k)
                 otherPr2 = otherEdge.GetPos2() - otherEdge.GetPos1()
                 otherPr = v3f(otherPr2[0], otherPr2[1], 0.f)
@@ -1281,14 +1258,14 @@ def RandomlyAdjustOneRoom01(self, layout, ptrGraph, indices):
             pr = edgeNearest.GetPos1() - edge.GetPos1()
             d = dot(norm, pr)
             dp = d * norm
-            pickedRoom.TranslateRoom(dp)
+            pickedRoom.translate_room(dp)
 
 
 
 
-def RandomlyAdjustOneRoom02(self, layout, ptrGraph, indices):
-    pickedRoomIndex = RandomlyPickOneRoom(layout, indices, NULL)
-    pickedRoom = layout.GetRoom(pickedRoomIndex)
+def RandomlyAdjustOneRoom02(self, layout, graph, indices):
+    picked_room_index = randomly_pick_one_room(layout, indices, NULL)
+    pickedRoom = layout.get_room(picked_room_index)
 
     numOfEdges = pickedRoom.GetNumOfEdges()
     pickedEdgeIndex = int(rand() / float(RAND_MAX) * numOfEdges)
@@ -1299,12 +1276,12 @@ def RandomlyAdjustOneRoom02(self, layout, ptrGraph, indices):
     norm = v2f(pr[1], -pr[0])
     norm = normalize(norm)
 
-    otherRoomIndex = RandomlyPickAnotherRoom(layout, pickedRoomIndex)
-    otherRoom = layout.GetRoom(otherRoomIndex)
+    otherRoomIndex = RandomlyPickAnotherRoom(layout, picked_room_index)
+    otherRoom = layout.get_room(otherRoomIndex)
     distMin = 1e10
     CRoomEdge edgeNearest
 
-    for (k = 0; k < otherRoom.GetNumOfEdges(); k++)
+    for (k = 0; k < otherRoom.GetNumOfEdges(); k++):
         otherEdge = otherRoom.GetEdge(k)
         otherPr2 = otherEdge.GetPos2() - otherEdge.GetPos1()
         otherPr = v3f(otherPr2[0], otherPr2[1], 0.f)
@@ -1323,42 +1300,42 @@ def RandomlyAdjustOneRoom02(self, layout, ptrGraph, indices):
         pr = edgeNearest.GetPos1() - edge.GetPos1()
         d = dot(norm, pr)
         dp = d * norm
-        pickedRoom.TranslateRoom(dp)
+        pickedRoom.translate_room(dp)
 
 
 
-def GradientDescentOneRoom(self, layout, ptrGraph, indices):
-    collideArea = 0.f
+def GradientDescentOneRoom(self, layout, graph, indices):
+    collide_area = 0.f
     connectivity = 0.f
-    myEnergy = GetLayoutEnergy(layout, ptrGraph, collideArea, connectivity)
-    pickedRoomIndex = RandomlyPickOneRoom(layout, indices, NULL)
+    myEnergy = get_layout_energy(layout, graph, collide_area, connectivity)
+    picked_room_index = randomly_pick_one_room(layout, indices, NULL)
 
     besti = -1
     bestEnergy = 10e6
     std.vector<int> candidateAngles
 
-    for (i = 0; i < 360; i += 10)
+    for (i = 0; i < 360; i += 10):
         angle = i * atan(1.f) * 4.f / 180.0f
         l = layout
-        pickedRoom = l.GetRoom(pickedRoomIndex)
+        pickedRoom = l.get_room(picked_room_index)
 
          one_step_length = 0.1f
         dp = v2f(cosf(angle) * one_step_length, sinf(angle) * one_step_length)
 
-        pickedRoom.TranslateRoom(dp)
-        collideArea = 0.f
+        pickedRoom.translate_room(dp)
+        collide_area = 0.f
         connectivity = 0.f
-        energyMin = GetLayoutEnergy(l, ptrGraph, collideArea, connectivity)
-        if energyMin < bestEnergy or besti == -1:
-            bestEnergy = energyMin
+        energy_min = get_layout_energy(l, graph, collide_area, connectivity)
+        if energy_min < bestEnergy or besti == -1:
+            bestEnergy = energy_min
             besti = i
 
-        if energyMin < myEnergy:
+        if energy_min < myEnergy:
             candidateAngles.push_back(i)
 
 
 
-    #	angle = besti * M_PI / 180.0f
+    #   angle = besti * M_PI / 180.0f
     float angle
 
     if candidateAngles.empty():
@@ -1373,19 +1350,19 @@ def GradientDescentOneRoom(self, layout, ptrGraph, indices):
     bestStep = -1
     bestEnergy = 10e6
 
-    for (iters = 0; iters < 4; iters++)
-        for (stepLength = stepSize; stepLength <= 2; stepLength += stepSize)
+    for (iters = 0; iters < 4; iters++):
+        for (stepLength = stepSize; stepLength <= 2; stepLength += stepSize):
             l = layout
-            pickedRoom = l.GetRoom(pickedRoomIndex)
+            pickedRoom = l.get_room(picked_room_index)
 
             dp = v2f(cosf(angle) * stepLength, sinf(angle) * stepLength)
 
-            pickedRoom.TranslateRoom(dp)
-            collideArea = 0.f
+            pickedRoom.translate_room(dp)
+            collide_area = 0.f
             connectivity = 0.f
-            energyMin = GetLayoutEnergy(l, ptrGraph, collideArea, connectivity)
-            if energyMin < bestEnergy or bestStep == -1:
-                bestEnergy = energyMin
+            energy_min = get_layout_energy(l, graph, collide_area, connectivity)
+            if energy_min < bestEnergy or bestStep == -1:
+                bestEnergy = energy_min
                 bestStep = stepLength
 
 
@@ -1397,30 +1374,30 @@ def GradientDescentOneRoom(self, layout, ptrGraph, indices):
     dp = v2f(cosf(angle) * bestStep, sinf(angle) * bestStep)
 
     # do the actual translation on the room itself
-    pickedRoom = layout.GetRoom(pickedRoomIndex)
-    pickedRoom.TranslateRoom(dp)
-    return pickedRoomIndex
+    pickedRoom = layout.get_room(picked_room_index)
+    pickedRoom.translate_room(dp)
+    return picked_room_index
 
 
-def RandomlyAdjustOneRoom03(self, layout, ptrGraph, indices, weightedIndices):
-    pickedRoomIndex = RandomlyPickOneRoom(layout, indices, weightedIndices)
-    pickedRoom = layout.GetRoom(pickedRoomIndex)
+def RandomlyAdjustOneRoom03(self, layout, graph, indices, weighted_indices):
+    picked_room_index = randomly_pick_one_room(layout, indices, weighted_indices)
+    pickedRoom = layout.get_room(picked_room_index)
 
-    SampleConfigSpaceForPickedRoom(layout, ptrGraph, indices, pickedRoomIndex)
-    return pickedRoomIndex
+    SampleConfigSpaceForPickedRoom(layout, graph, indices, picked_room_index)
+    return picked_room_index
 
 
-def SampleConfigSpaceForPickedRoom(self, layout, ptrGraph, indices, pickedRoomIndex):
-    pickedRoom = layout.GetRoom(pickedRoomIndex)
+def SampleConfigSpaceForPickedRoom(self, layout, graph, indices, picked_room_index):
+    pickedRoom = layout.get_room(picked_room_index)
     CConfigSpace configSpace
-    std.vector<int> connectedIndices = GetConnectedIndices(ptrGraph, pickedRoomIndex)
+    std.vector<int> connectedIndices = GetConnectedIndices(graph, picked_room_index)
     if connectedIndices.size() >= 1:
         random_shuffle(connectedIndices.begin(), connectedIndices.end())
         idx0 = connectedIndices[0]
-        CConfigSpace configSpace0(layout.GetRoom(idx0), pickedRoom)
+        CConfigSpace configSpace0(layout.get_room(idx0), pickedRoom)
         configSpace = configSpace0
-        for (i = 1; i < int(connectedIndices.size()); i++)
-            CConfigSpace configSpaceTmp(layout.GetRoom(connectedIndices[i]), pickedRoom)
+        for (i = 1; i < int(connectedIndices.size()); i++):
+            CConfigSpace configSpaceTmp(layout.get_room(connectedIndices[i]), pickedRoom)
             configSpaceNew = CConfigSpace.FindIntersection(configSpace, configSpaceTmp)
             if configSpaceNew.IsEmpty() == True:
                 break
@@ -1432,99 +1409,99 @@ def SampleConfigSpaceForPickedRoom(self, layout, ptrGraph, indices, pickedRoomIn
 
     whileCnt = 0
     while (configSpace.IsEmpty() == True)
-        otherRoomIndex = RandomlyPickAnotherRoom(layout, pickedRoomIndex)
-        otherRoom = layout.GetRoom(otherRoomIndex)
+        otherRoomIndex = RandomlyPickAnotherRoom(layout, picked_room_index)
+        otherRoom = layout.get_room(otherRoomIndex)
         configSpace = CConfigSpace(otherRoom, pickedRoom)
         whileCnt++
         if whileCnt >= 1000:
-            std.cout << "Break from the while loop after reaching enough number of trialsnot \n"
+            print(f'Break from the while loop after reaching enough number of trials!')
             return
 
 
     pos = configSpace.RandomlySampleConfigSpace()
-    dp = pos - pickedRoom.GetRoomCenter()
-    pickedRoom.TranslateRoom(dp)
+    dp = pos - pickedRoom.get_room_centre()
+    pickedRoom.translate_room(dp)
 
 
-def RandomlyAdjustOneRoom04(self, layout, ptrGraph, indices, weightedIndices):
+def RandomlyAdjustOneRoom04(self, layout, graph, indices, weighted_indices):
     numOfTemplates = m_ptrTemplates.GetNumOfTemplates()
     if numOfTemplates <= 1:
         return -1
 
 
-    pickedRoomIndex = RandomlyPickOneRoom(layout, indices, weightedIndices)
-    pickedRoom = layout.GetRoom(pickedRoomIndex)
+    picked_room_index = randomly_pick_one_room(layout, indices, weighted_indices)
+    pickedRoom = layout.get_room(picked_room_index)
 
-    typeOld = ptrGraph.GetNode(pickedRoomIndex).GetType()
+    typeOld = graph.GetNode(picked_room_index).GetType()
     typeNew = typeOld
-    boundaryOld = ptrGraph.GetNode(pickedRoomIndex).GetBoundaryType()
+    boundaryOld = graph.GetNode(picked_room_index).GetBoundaryType()
     boundaryNew = -1
     whileCnt = 0
-    while (typeNew == typeOld or boundaryNew != boundaryOld or m_ptrTemplates.GetRoom(typeNew).GetBoundaryType() == 1)
+    while (typeNew == typeOld or boundaryNew != boundaryOld or m_ptrTemplates.get_room(typeNew).GetBoundaryType() == 1)
         typeNew = int(rand() / float(RAND_MAX) * numOfTemplates)
         typeNew = typeNew % numOfTemplates
-        boundaryNew = m_ptrTemplates.GetRoom(typeNew).GetBoundaryType()
+        boundaryNew = m_ptrTemplates.get_room(typeNew).GetBoundaryType()
         whileCnt++
         if whileCnt >= 1000:
-            std.cout << "Break from the while loop after reaching enough number of trials in RandomlyAdjustOneRoom04()not \n"
+            print(f'Break from the while loop after reaching enough number of trials in RandomlyAdjustOneRoom04()!')
             return -1
 
 
-    ptrGraph.GetNode(pickedRoomIndex).SetType(typeNew)
-    room = m_ptrTemplates.GetRoom(typeNew)
-    p1 = room.GetRoomCenter()
-    p2 = pickedRoom.GetRoomCenter()
+    graph.GetNode(picked_room_index).SetType(typeNew)
+    room = m_ptrTemplates.get_room(typeNew)
+    p1 = room.get_room_centre()
+    p2 = pickedRoom.get_room_centre()
     dp = p2 - p1
-    room.TranslateRoom(dp)
+    room.translate_room(dp)
     pickedRoom = room
 #if 1 # New on 09/15/2013
-    #SampleConfigSpaceForPickedRoom(layout, ptrGraph, indices, pickedRoomIndex)
+    #SampleConfigSpaceForPickedRoom(layout, graph, indices, picked_room_index)
 #endif
-    return pickedRoomIndex
+    return picked_room_index
 
 
-def GetLayoutEnergyEarlyOut(self, layout, ptrGraph, collideArea, connectivity, roomMoved, energyTmp, energyCurrent):
+def get_layout_energyEarlyOut(self, layout, graph, collide_area, connectivity, roomMoved, energy_tmp, energy_current):
     layout.ResetRoomEnergies()
-    *energyTmp = 1.f
+    *energy_tmp = 1.f
 
     # do connectivity first, it's (probably?) cheaper
 
     if CLevelConfig.m_sigmaConnectivity > 0.f:
-        connectivity = CheckRoomConnectivity(layout, ptrGraph, True, roomMoved)
-        (*energyTmp) *= exp(connectivity * CLevelConfig.m_sigmaConnectivity)
+        connectivity = CheckRoomConnectivity(layout, graph, True, roomMoved)
+        (*energy_tmp) *= exp(connectivity * CLevelConfig.m_sigmaConnectivity)
 
-    if *energyTmp > energyCurrent:
+    if *energy_tmp > energy_current:
         return False
 
     if CLevelConfig.m_sigmaCollide > 0.f:
-        collideArea = LayoutCollide(layout, ptrGraph, True, roomMoved)
-        (*energyTmp) *= exp(collideArea * CLevelConfig.m_sigmaCollide)
+        collide_area = LayoutCollide(layout, graph, True, roomMoved)
+        (*energy_tmp) *= exp(collide_area * CLevelConfig.m_sigmaCollide)
 
-    if *energyTmp > energyCurrent:
+    if *energy_tmp > energy_current:
         return False
 
 
     if CLevelConfig.m_sigmaContact > 0.f:
-        contactArea = LayoutContact(layout, ptrGraph, True, CLevelConfig.m_flagNonOverlapContact)
-        (*energyTmp) *= exp(-contactArea * CLevelConfig.m_sigmaContact)
+        contactArea = LayoutContact(layout, graph, True, CLevelConfig.m_flagNonOverlapContact)
+        (*energy_tmp) *= exp(-contactArea * CLevelConfig.m_sigmaContact)
 
     return True
 
 
-def GetLayoutEnergy(self, layout, ptrGraph, collideArea, connectivity, roomMoved, doContact, indices):
+def get_layout_energy(self, layout, graph, collide_area, connectivity, roomMoved, doContact, indices):
     layout.ResetRoomEnergies()
     layoutEnergy = 1.f
     if CLevelConfig.m_sigmaCollide > 0.f:
-        collideArea = LayoutCollide(layout, ptrGraph, True, roomMoved)
-        layoutEnergy *= exp(collideArea * CLevelConfig.m_sigmaCollide)
+        collide_area = LayoutCollide(layout, graph, True, roomMoved)
+        layoutEnergy *= exp(collide_area * CLevelConfig.m_sigmaCollide)
 
 
     if CLevelConfig.m_sigmaConnectivity > 0.f:
-        connectivity = CheckRoomConnectivity(layout, ptrGraph, True, roomMoved)
+        connectivity = CheckRoomConnectivity(layout, graph, True, roomMoved)
         layoutEnergy *= exp(connectivity * CLevelConfig.m_sigmaConnectivity)
 
     if CLevelConfig.m_sigmaContact > 0.f and doContact:
-        contactArea = -LayoutContact(layout, ptrGraph, True, CLevelConfig.m_flagNonOverlapContact, indices)
+        contactArea = -LayoutContact(layout, graph, True, CLevelConfig.m_flagNonOverlapContact, indices)
 
         if contactArea >= 0.0f:
             contactArea = 0.0
@@ -1537,41 +1514,41 @@ def GetLayoutEnergy(self, layout, ptrGraph, collideArea, connectivity, roomMoved
     return layoutEnergy
 
 
-def CheckRoomConnectivity(self, layout, ptrGraph, flagVisitedOnly ''' = False ''', roomMoved):
+def CheckRoomConnectivity(self, layout, graph, flagVisitedOnly ''' = False ''', roomMoved):
     connectivity = 0.f
-    if ptrGraph == NULL:
+    if graph == NULL:
         return connectivity
 
-    for (i = 0; i < ptrGraph.GetNumOfEdges(); i++)
-        edge = ptrGraph.GetEdge(i)
+    for (i = 0; i < graph.GetNumOfEdges(); i++):
+        edge = graph.GetEdge(i)
         idx0 = edge.GetIdx0()
         idx1 = edge.GetIdx1()
-        flagVisited0 = ptrGraph.GetNode(idx0).GetFlagVisited()
-        flagVisited1 = ptrGraph.GetNode(idx1).GetFlagVisited()
+        flagVisited0 = graph.GetNode(idx0).GetFlagVisited()
+        flagVisited1 = graph.GetNode(idx1).GetFlagVisited()
         if flagVisitedOnly == True and (flagVisited0 == False or flagVisited1 == False):
             continue
 
-        flagFixed0 = ptrGraph.GetNode(idx0).GetFlagFixed()
-        flagFixed1 = ptrGraph.GetNode(idx1).GetFlagFixed()
+        flagFixed0 = graph.GetNode(idx0).GetFlagFixed()
+        flagFixed1 = graph.GetNode(idx1).GetFlagFixed()
         if flagFixed0 == True and flagFixed1 == True:
             continue
 
         if roomMoved == -1 or roomMoved == idx0 or roomMoved == idx1 or layout.cachedConnectivities.find(std.make_pair(idx0, idx1)) == layout.cachedConnectivities.end():
-            contactArea = RoomContact(layout.GetRoom(idx0), layout.GetRoom(idx1))
+            contactArea = RoomContact(layout.get_room(idx0), layout.get_room(idx1))
             if contactArea <= CLevelConfig.m_roomContactThresh:
                 if CLevelConfig.m_flagDiscreteConnectFunc == True:
                     connectivity += 1.f
                     layout.cachedConnectivities[std.make_pair(idx0, idx1)] = 1.f
 
                 else:
-                    d = RoomDistance(layout.GetRoom(idx0), layout.GetRoom(idx1))
+                    d = RoomDistance(layout.get_room(idx0), layout.get_room(idx1))
                     d += CLevelConfig.m_roomContactThresh
                     layout.cachedConnectivities[std.make_pair(idx0, idx1)] = d
                     connectivity += d
 
                 factor = 1.1f
-                layout.GetRoom(idx0).UpdateEnergy(factor)
-                layout.GetRoom(idx1).UpdateEnergy(factor)
+                layout.get_room(idx0).UpdateEnergy(factor)
+                layout.get_room(idx1).UpdateEnergy(factor)
 
             else:
                 layout.cachedConnectivities[std.make_pair(idx0, idx1)] = 0.0f
@@ -1585,109 +1562,109 @@ def CheckRoomConnectivity(self, layout, ptrGraph, flagVisitedOnly ''' = False ''
     return connectivity
 
 
-def LayoutCollide(self, layout, ptrGraph, flagVisitedOnly ''' = False ''', roomThatMoved ''' = -1 '''):
-    collideAreaTotal = 0.f
+def LayoutCollide(self, layout, graph, flagVisitedOnly ''' = False ''', roomThatMoved ''' = -1 '''):
+    collide_areaTotal = 0.f
     collideCount = 0
     numOfRooms = layout.GetNumOfRooms()
-    for (i = 0; i < numOfRooms; i++)
-        for (j = i + 1; j < numOfRooms; j++)
-            flagVisited0 = ptrGraph.GetNode(i).GetFlagVisited()
-            flagVisited1 = ptrGraph.GetNode(j).GetFlagVisited()
+    for (i = 0; i < numOfRooms; i++):
+        for (j = i + 1; j < numOfRooms; j++):
+            flagVisited0 = graph.GetNode(i).GetFlagVisited()
+            flagVisited1 = graph.GetNode(j).GetFlagVisited()
             if flagVisitedOnly == True and (flagVisited0 == False or flagVisited1 == False):
                 continue
 
-            flagFixed0 = ptrGraph.GetNode(i).GetFlagFixed()
-            flagFixed1 = ptrGraph.GetNode(j).GetFlagFixed()
+            flagFixed0 = graph.GetNode(i).GetFlagFixed()
+            flagFixed1 = graph.GetNode(j).GetFlagFixed()
             if flagFixed0 == True and flagFixed1 == True:
                 continue
 
             if roomThatMoved == -1 or roomThatMoved == i or roomThatMoved == j or layout.cachedCollisionEnergies.find(std.make_pair(i, j)) == layout.cachedCollisionEnergies.end():
-                collideArea = RoomCollides(layout.GetRoom(i), layout.GetRoom(j))
-                if collideArea > 0.f:
-                    collideAreaTotal += collideArea
+                collide_area = RoomCollides(layout.get_room(i), layout.get_room(j))
+                if collide_area > 0.f:
+                    collide_areaTotal += collide_area
                     collideCount++
-                    factor = exp(collideArea)
-                    layout.GetRoom(i).UpdateEnergy(factor)
-                    layout.GetRoom(j).UpdateEnergy(factor)
-                    layout.cachedCollisionEnergies[std.make_pair(i, j)] = collideArea
+                    factor = exp(collide_area)
+                    layout.get_room(i).UpdateEnergy(factor)
+                    layout.get_room(j).UpdateEnergy(factor)
+                    layout.cachedCollisionEnergies[std.make_pair(i, j)] = collide_area
 
                 else:
-                    layout.cachedCollisionEnergies[std.make_pair(i, j)] = collideArea
+                    layout.cachedCollisionEnergies[std.make_pair(i, j)] = collide_area
 
 
             else:
-                collideAreaTotal += layout.cachedCollisionEnergies[std.make_pair(i, j)]
+                collide_areaTotal += layout.cachedCollisionEnergies[std.make_pair(i, j)]
 
 
 
 
 #ifdef PRINT_OUT_DEBUG_INFO
-    std.cout << "Number of colliding room pairs: " << collideCount << std.endl
-    std.cout << "Total area of colliding area: " << collideAreaTotal << std.endl
+    print(f'Number of colliding room pairs: {collideCount}')
+    print(f'Total area of colliding area: {collide_areaTotal}')
 #endif
-    return collideAreaTotal
+    return collide_areaTotal
 
 
 def LayoutCollide(self, layout):
-    collideAreaTotal = 0.f
+    collide_areaTotal = 0.f
     collideCount = 0
     numOfRooms = layout.GetNumOfRooms()
-    for (i = 0; i < numOfRooms; i++)
-        for (j = i + 1; j < numOfRooms; j++)
-            if layout.GetRoom(i).GetBoundaryType() == 1 and layout.GetRoom(j).GetBoundaryType() == 1:
+    for (i = 0; i < numOfRooms; i++):
+        for (j = i + 1; j < numOfRooms; j++):
+            if layout.get_room(i).GetBoundaryType() == 1 and layout.get_room(j).GetBoundaryType() == 1:
                 continue
 
-            collideArea = RoomCollides(layout.GetRoom(i), layout.GetRoom(j))
-            if collideArea > 0.f:
-                collideAreaTotal += collideArea
+            collide_area = RoomCollides(layout.get_room(i), layout.get_room(j))
+            if collide_area > 0.f:
+                collide_areaTotal += collide_area
                 collideCount++
 
 
 
 #ifdef PRINT_OUT_DEBUG_INFO
-    std.cout << "Number of colliding room pairs: " << collideCount << std.endl
-    std.cout << "Total area of colliding area: " << collideAreaTotal << std.endl
+    print(f'Number of colliding room pairs: {collideCount}')
+    print(f'Total area of colliding area: {collide_areaTotal}')
 #endif
-    return collideAreaTotal
+    return collide_areaTotal
 
 
 def RoomCollides(self, room1, room2):
-    collideArea = -1.f
+    collide_area = -1.f
 
     # Test the bounding box first...
     AABB2f bb1, bb2
-    room1.GetRoomBoundingBox(bb1)
-    room2.GetRoomBoundingBox(bb2)
+    room1.get_roomBoundingBox(bb1)
+    room2.get_roomBoundingBox(bb2)
     if TestBoundingBoxCollides(bb1, bb2) == False:
         return 0.f
 
     # Use the Clipper library...
     CClipperWrapper wrapper
-    collideArea = wrapper.ComputeCollideArea(room1, room2)
+    collide_area = wrapper.Computecollide_area(room1, room2)
 
-    return collideArea
+    return collide_area
 
 
 def BoundingBoxCollidesArea(self, bb1, bb2):
-    collideArea = -1.f
-    for (j = 0; j < 2; j++)
+    collide_area = -1.f
+    for (j = 0; j < 2; j++):
         if bb1.m_posMax[j] < bb2.m_posMin[j] or bb1.m_posMin[j] > bb2.m_posMax[j]:
-            return collideArea
+            return collide_area
 
 
-    collideArea = 1.f
-    for (j = 0; j < 2; j++)
-        pMin = max(bb1.m_posMin[j], bb2.m_posMin[j])
-        pMax = min(bb1.m_posMax[j], bb2.m_posMax[j])
-        if (pMin > pMax) return -1.f
-        pd = pMax - pMin
-        collideArea *= pd
+    collide_area = 1.f
+    for (j = 0; j < 2; j++):
+        p_min = max(bb1.m_posMin[j], bb2.m_posMin[j])
+        p_max = min(bb1.m_posMax[j], bb2.m_posMax[j])
+        if (p_min > p_max) return -1.f
+        pd = p_max - p_min
+        collide_area *= pd
 
-    return collideArea
+    return collide_area
 
 
 def TestBoundingBoxCollides(self, bb1, bb2):
-    for (j = 0; j < 2; j++)
+    for (j = 0; j < 2; j++):
         if bb1.m_posMax[j] < bb2.m_posMin[j] or bb1.m_posMin[j] > bb2.m_posMax[j]:
             return False
 
@@ -1695,22 +1672,22 @@ def TestBoundingBoxCollides(self, bb1, bb2):
     return True
 
 
-def LayoutContact(self, layout, ptrGraph, flagVisitedOnly ''' = False ''', flagNonOverlap ''' = False ''', indices, roomThatMoved ''' probably == null '''):
+def LayoutContact(self, layout, graph, flagVisitedOnly ''' = False ''', flagNonOverlap ''' = False ''', indices, roomThatMoved ''' probably == null '''):
     contactAreaTotal = 0.f
     contactCount = 0
     numOfRooms = layout.GetNumOfRooms()
 
-    for (i = 0; i < numOfRooms; i++)
-        flagVisited0 = ptrGraph.GetNode(i).GetFlagVisited()
+    for (i = 0; i < numOfRooms; i++):
+        flagVisited0 = graph.GetNode(i).GetFlagVisited()
         if flagVisited0 == False:
             continue
 
 
         badNeighbour = False
-        std.vector<int>neighbours = ptrGraph.GetNode(i).GetNeighbors()
-        for (j = 0; j < neighbours.size(); j++)
+        std.vector<int>neighbours = graph.GetNode(i).GetNeighbors()
+        for (j = 0; j < neighbours.size(); j++):
             found = False
-            for (k = 0; k < indices.size(); k++)
+            for (k = 0; k < indices.size(); k++):
                 if (*indices)[k] == neighbours[j]:
                     found = True
                     break
@@ -1724,19 +1701,19 @@ def LayoutContact(self, layout, ptrGraph, flagVisitedOnly ''' = False ''', flagN
         if not badNeighbour:
             continue
 
-        perimeter = RoomPerimeter(layout.GetRoom(i))
+        perimeter = RoomPerimeter(layout.get_room(i))
 
-        for (j = i + 1; j < numOfRooms; j++)
-            flagVisited1 = ptrGraph.GetNode(j).GetFlagVisited()
+        for (j = i + 1; j < numOfRooms; j++):
+            flagVisited1 = graph.GetNode(j).GetFlagVisited()
             if flagVisitedOnly == True and (flagVisited0 == False or flagVisited1 == False):
                 continue
 
             if i == roomThatMoved or j == roomThatMoved or roomThatMoved == -1 or layout.cachedContacts.find(std.make_pair(i, j)) == layout.cachedContacts.end():
-                if RoomCollides(layout.GetRoom(i), layout.GetRoom(j)) > 0.f:
+                if RoomCollides(layout.get_room(i), layout.get_room(j)) > 0.f:
                     layout.cachedContacts[std.make_pair(i, j)] = 0.0f
                     continue
 
-                contactArea = RoomContact(layout.GetRoom(i), layout.GetRoom(j))
+                contactArea = RoomContact(layout.get_room(i), layout.get_room(j))
                 if (contactArea > CLevelConfig.m_roomContactThresh) #0.f
                     contactArea -= CLevelConfig.m_roomContactThresh
                     layout.cachedContacts[std.make_pair(i, j)] = contactArea
@@ -1753,22 +1730,22 @@ def LayoutContact(self, layout, ptrGraph, flagVisitedOnly ''' = False ''', flagN
 
 
 #ifdef PRINT_OUT_DEBUG_INFO
-    std.cout << "Number of contacting room pairs: " << contactCount << std.endl
-    std.cout << "Total area of contacting area: " << contactAreaTotal << std.endl
+    print(f'Number of contacting room pairs: {contactCount}')
+    print(f'Total area of contacting area: {contactAreaTotal}')
 #endif
     return contactAreaTotal
 
 
-def ComputeLabelPosition(self, idx, ptrGraph, labelRad):
-    v2f pMin, pMax
-    ptrGraph.GetGraphBoundingBox(pMin, pMax)
-    vMax = max(max(std.abs(pMin[0]), std.abs(pMin[1])), max(std.abs(pMax[0]), std.abs(pMax[1])))
-     pos = ptrGraph.GetNodePos(idx)
+def ComputeLabelPosition(self, idx, graph, labelRad):
+    v2f p_min, p_max
+    graph.GetGraphBoundingBox(p_min, p_max)
+    vMax = max(max(std.abs(p_min[0]), std.abs(p_min[1])), max(std.abs(p_max[0]), std.abs(p_max[1])))
+     pos = graph.GetNodePos(idx)
      rad = labelRad
     n = 32
     dMinMax = -1e10
     v2f piMax
-    for (i = 0; i < n; i++)
+    for (i = 0; i < n; i++):
         angle = atan(1.f) * 8.f * float(i) / float(n)
         cv = -cos(angle) * rad
         sv = sin(angle) * rad
@@ -1777,15 +1754,15 @@ def ComputeLabelPosition(self, idx, ptrGraph, labelRad):
             continue
 
         dMin = 1e10
-        for (j = 0; j < ptrGraph.GetNumOfEdges(); j++)
-            edge = ptrGraph.GetEdge(j)
+        for (j = 0; j < graph.GetNumOfEdges(); j++):
+            edge = graph.GetEdge(j)
             idx1 = edge.GetIdx0()
             idx2 = edge.GetIdx1()
             if idx1 != idx and idx2 != idx:
                 continue
 
-            pos1 = ptrGraph.GetNodePos(idx1)
-            pos2 = ptrGraph.GetNodePos(idx2)
+            pos1 = graph.GetNodePos(idx1)
+            pos2 = graph.GetNodePos(idx2)
             dTmp = PointToSegmentSqDistance(pi, CLineBase(pos1, pos2))
             if dTmp < dMin:
                 dMin = dTmp
