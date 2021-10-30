@@ -1,5 +1,7 @@
 import math
 
+import numpy as np
+
 from reactor.geometry.vector import Vector2, Vector3
 
 
@@ -26,14 +28,21 @@ def point_to_segment_sq_distance(pt, line):
         d = d * d
     return d
 
+#
+# def point_to_line_sq_distance(pt, line):
+#     return point_to_line_sq_distance(pt, line.pos2, line.pos1)
+#
+#
+# def point_to_line_sq_distance(pt, p1, p2):
 
-def point_to_line_sq_distance(pt, line):
-    return point_to_line_sq_distance(pt, line.pos2, line.pos1)
-
-
-def point_to_line_sq_distance(pt, p1, p2):
+def point_to_line_sq_distance(pt, *args):
+    try:
+        p1, p2 = args
+    except ValueError:
+        line = args[0]
+        p1, p2 = line.pos2, line.pos1
     pe = p2 - p1
-    pe_norm = pe.normalize()
+    pe_norm = pe.normalise()
     pr = pt - p1
     pe_new = Vector3(pe_norm[0], pe_norm[1], 0)
     pr_new = Vector3(pr[0], pr[1], 0)
@@ -62,59 +71,58 @@ def room_contact(room1, room2):
     return contact_area
 
 
-def room_contact(room1, room2, edgeIdx1, edgeIdx2):
-    contact_area_max = 0
-    for i in range(room1.num_of_edges):
-        edge1 = room1.get_edge(i)
-        for j in range(room2.num_of_edges):
-            edge2 = room2.get_edge(j)
-            if not edge1.door_flag or not edge2.door_flag:
-                continue
-
-            contact_area_tmp = edge_contact(edge1, edge2)
-            if contact_area_tmp > contact_area_max:
-                contact_area_max = contact_area_tmp
-                edgeIdx1 = i
-                edgeIdx2 = j
-
-    return contact_area_max
+# def room_contact(room1, room2, edgeIdx1, edgeIdx2):
+#     contact_area_max = 0
+#     for i in range(room1.num_of_edges):
+#         edge1 = room1.get_edge(i)
+#         for j in range(room2.num_of_edges):
+#             edge2 = room2.get_edge(j)
+#             if not edge1.door_flag or not edge2.door_flag:
+#                 continue
+#
+#             contact_area_tmp = edge_contact(edge1, edge2)
+#             if contact_area_tmp > contact_area_max:
+#                 contact_area_max = contact_area_tmp
+#                 edgeIdx1 = i
+#                 edgeIdx2 = j
+#
+#     return contact_area_max
 
 
 def edge_contact(line1, line2):
-    numericalTolerance = NUMERICAL_TOLERANCE * 100
-    numericalToleranceSq = numericalTolerance * numericalTolerance
+    numerical_tolerance = NUMERICAL_TOLERANCE * 100
+    numerical_tolerance_sq = numerical_tolerance * numerical_tolerance
     pr1 = line1.pos2 - line1.pos1
     pr2 = line2.pos2 - line2.pos1
     pe1 = Vector3(pr1[0], pr1[1], 0.0)
     pe2 = Vector3(pr2[0], pr2[1], 0.0)
-    cp = cross(pe1, pe2)
-    if mag2(cp) > numericalTolerance:
+    cp = pe1.cross(pe2)
+    if cp.mag2() > numerical_tolerance:
         return 0.0
 
-    posMin1 = min_union(line1.pos1, line1.pos2)
-    posMax1 = max_union(line1.pos1, line1.pos2)
-    posMin2 = min_union(line2.pos1, line2.pos2)
-    posMax2 = max_union(line2.pos1, line2.pos2)
+    pos_min1 = line1.pos1.minimum(line1.pos2)
+    pos_max1 = line1.pos1.maximum(line1.pos2)
+    pos_min2 = line2.pos1.minimum(line2.pos2)
+    pos_max2 = line2.pos1.maximum(line2.pos2)
     for j in range(2):
-        if posMax1[j] < posMin2[j] - numericalTolerance or posMin1[j] > posMax2[j] + numericalTolerance:
+        if pos_max1[j] < pos_min2[j] - numerical_tolerance or pos_min1[j] > pos_max2[j] + numerical_tolerance:
             return 0.0
-
 
     d1 = point_to_line_sq_distance(line2.pos1, line1)
     d2 = point_to_line_sq_distance(line2.pos2, line1)
-    if d1 > numericalToleranceSq or d2 > numericalToleranceSq:
+    if d1 > numerical_tolerance_sq or d2 > numerical_tolerance_sq:
         return 0.0
 
-    # Now the two edges should in the same line anyway...
-    len1 = mag(pe1)
-    len2 = mag(pe2)
-    d11 = mag2(line1.pos1 - line2.pos1)
-    d21 = mag2(line1.pos2 - line2.pos1)
-    d12 = mag2(line1.pos1 - line2.pos2)
-    d22 = mag2(line1.pos2 - line2.pos2)
-    dMax = math.sqrt(max(max(d11, d21), max(d12, d22)))
-    dMax = max(dMax, max(len1, len2))
-    contact_area = len1 + len2 - dMax
+    # Now the two edges should be in the same line.
+    len1 = pe1.mag()
+    len2 = pe2.mag()
+    d11 = (line1.pos1 - line2.pos1).mag2()
+    d21 = (line1.pos2 - line2.pos1).mag2()
+    d12 = (line1.pos1 - line2.pos2).mag2()
+    d22 = (line1.pos2 - line2.pos2).mag2()
+    d_max = math.sqrt(max(max(d11, d21), max(d12, d22)))
+    d_max = max(d_max, max(len1, len2))
+    contact_area = len1 + len2 - d_max
     contact_area = max(contact_area, 0.0)
     return contact_area
 
@@ -175,24 +183,24 @@ def line_intersection(Ax, Ay, Bx, By, Cx, Cy, Dx, Dy, Ix, Iy):
     return True
 
 
-def ComparePrSmallerFirst(pr1, pr2):
-    return (pr1.m_dp < pr2.m_dp)
+def compare_pr_smaller_first(pr1, pr2):
+    return pr1.m_dp < pr2.m_dp
 
 
 def sort_vec_pr(vec_pr):
-    if vec_pr.size() < 2:
-        return
-
-    pd = vec_pr[1] - vec_pr[0]
-    std.vector<PrSort> vec_prSort(vec_pr.size())
-    for i in range(len(vec_prSort)):
-        vec_prSort[i].m_pr = vec_pr[i]
-        vec_prSort[i].m_dp = dot(pd, vec_pr[i] - vec_pr[0])
-
-    sort(vec_prSort.begin(), vec_prSort.end(), ComparePrSmallerFirst)
-    #for (i = 0; i < int(vec_prSort.size()); i++)
-    for i in range(len(vec_prSort)):
-        vec_pr[i] = vec_prSort[i].m_pr
+    return np.sort(vec_pr)
+    # if len(vec_pr) < 2:
+    #     return
+    #
+    # pd = vec_pr[1] - vec_pr[0]
+    # vec_pr_sort = [] * len(vec_pr)#std.vector<PrSort> vec_pr_sort(vec_pr.size())
+    # for i in range(len(vec_pr_sort)):
+    #     vec_pr_sort[i].m_pr = vec_pr[i]
+    #     vec_pr_sort[i].m_dp = pd.dot(vec_pr[i] - vec_pr[0])
+    #
+    # sort(vec_pr_sort.begin(), vec_pr_sort.end(), compare_pr_smaller_first)
+    # for i in range(len(vec_pr_sort)):
+    #     vec_pr[i] = vec_pr_sort[i].m_pr
 
 
 def random_color_from_index(self, idx):

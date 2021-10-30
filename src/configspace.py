@@ -1,8 +1,14 @@
+import copy
 import random
 
+import networkx as nx
+
 from reactor.geometry.vector import Vector2, Vector3, Vector4
+from reactor.geometry.orthogonalpolygon import OrthogonalPolygon
+from reactor import utils
 
 import levelconfig
+from clipperwrapper import compute_collide_area
 from levelmath import (
     NUMERICAL_TOLERANCE,
     NUMERICAL_TOLERANCE_SQ,
@@ -10,6 +16,7 @@ from levelmath import (
     point_to_segment_sq_distance,
     room_contact,
     segment_intersection,
+    sort_vec_pr,
 )
 from linebase import LineBase
 from room import Room
@@ -50,6 +57,7 @@ class ConfigSpace:
         self.precomputed_table = []
         self.flag_precomputed = False
 
+        # HAX. Not sure how the c++ gets around this.
         if room1 is None and room2 is None:
             return
 
@@ -57,12 +65,10 @@ class ConfigSpace:
             cs = self.precomputed_table[room1.template_type][room2.template_type]
             cs.translate_config_space(room1.room_centre)
             
-            # TODO: Looks like another constructor / class method
+            # TODO: Looks like another constructor / class method. Move to
+            # __new__
             #*self = cs
             return
-
-        print(room1, room2)
-        print(room1.num_of_edges, room2.num_of_edges)
 
         # Why does 0.5 makes everything better?
         contact_thresh = levelconfig.ROOM_CONTACT_THRESH * 0.5
@@ -70,6 +76,7 @@ class ConfigSpace:
             edge1 = room1.get_edge(i)
             for j in range(room2.num_of_edges):
                 edge2 = room2.get_edge(j)
+
                 if not edge1.door_flag or not edge2.door_flag:
                     continue
 
@@ -77,20 +84,20 @@ class ConfigSpace:
                 if cp.mag2() > NUMERICAL_TOLERANCE:
                     continue
 
-                vec_pr = Vector4(0, 0, 0, 0)
+                vec_pr = [Vector2(0, 0)] * 4
                 vec_pr[0] = edge1.pos1 - edge2.pos1
                 vec_pr[1] = edge1.pos1 - edge2.pos2
                 vec_pr[2] = edge1.pos2 - edge2.pos1
                 vec_pr[3] = edge1.pos2 - edge2.pos2
     #ifdef ACCURATE_CONFIG_SPACE
                 dir_ = edge1.direction
-                dir_ = dir_.normalize()
+                dir_ = dir_.normalise()
                 shift = dir_ * contact_thresh
                 for k in range(4):
-                    vec_pr.push_back(vec_pr[k] + shift)
-                    vec_pr.push_back(vec_pr[k] - shift)
+                    vec_pr.append(vec_pr[k] + shift)
+                    vec_pr.append(vec_pr[k] - shift)
     #endif
-                SortVecPr(vec_pr)
+                sort_vec_pr(vec_pr)
                 for k in range(len(vec_pr)):
                     pr1 = vec_pr[k]
                     pr2 = vec_pr[k - 1]
@@ -98,34 +105,36 @@ class ConfigSpace:
                         continue
 
                     pr3 = (pr1 + pr2) * 0.5
-                    room2n1 = room2
+                    room2n1 = copy.deepcopy(room2)
                     room2n1.translate_room(pr1)
-                    if wrapper.ComputeCollideArea(room1, room2n1) > NUMERICAL_TOLERANCE:
+
+                    # TODO: Could replace with touches / intersects?
+                    if compute_collide_area(room1, room2n1) > NUMERICAL_TOLERANCE:
                         continue
     #ifdef ACCURATE_CONFIG_SPACE
                     if room_contact(room1, room2n1) < contact_thresh - NUMERICAL_TOLERANCE:
                         continue
     #endif
-                    room2n2 = room2
+                    room2n2 = copy.deepcopy(room2)
                     room2n2.translate_room(pr2)
-                    if wrapper.ComputeCollideArea(room1, room2n2) > NUMERICAL_TOLERANCE:
+                    if compute_collide_area(room1, room2n2) > NUMERICAL_TOLERANCE:
                         continue
     #ifdef ACCURATE_CONFIG_SPACE
                     if room_contact(room1, room2n2) < contact_thresh - NUMERICAL_TOLERANCE:
                         continue
     #endif
-                    room2n3 = room2
+                    room2n3 = copy.deepcopy(room2)
                     room2n3.translate_room(pr3)
-                    if wrapper.ComputeCollideArea(room1, room2n3) > NUMERICAL_TOLERANCE:
+                    if compute_collide_area(room1, room2n3) > NUMERICAL_TOLERANCE:
                         continue
     #ifdef ACCURATE_CONFIG_SPACE
                     if room_contact(room1, room2n3) < contact_thresh - NUMERICAL_TOLERANCE:
                         continue
     #endif
-                    pos1 = room2.room_centre + pr1
-                    pos2 = room2.room_centre + pr2
+                    pos1 = room2.get_room_centre() + pr1
+                    pos2 = room2.get_room_centre() + pr2
                     line = ConfigLine(pos1, pos2)
-                    self.add_config_line(line)
+                    self.config_lines.append(line)
 
         self.merge()
 
@@ -134,10 +143,9 @@ class ConfigSpace:
         return len(self.config_lines)
 
     def __str__(self):
-        str_ = ''
+        str_ = f'ConfigSpace with {self.num_of_lines} lines\n'
         for i in range(self.num_of_lines):
-            str_ += 'The {i}th line:\n'
-            str_ += str(self.config_lines[i])
+            str_ += f'    {i}th line: {self.config_lines[i]}\n'
         return str_
 
     def randomly_sample_config_space(self):
@@ -239,16 +247,16 @@ class ConfigSpace:
     def find_union(cls, config_space, config_line):
         config_space_new = config_space
         if not config_space.config_lines:
-            config_space_new.add_config_line(config_line)
+            config_space_new.config_lines.append(config_line)
             return config_space_new
 
         merge_flag = False
         for i in range(config_space.num_of_lines):
-            line = config_space_new.self.config_lines[i]
+            line = config_space_new.config_lines[i]
             edge1 = RoomEdge(line.pos1, line.pos2)
             edge2 = RoomEdge(config_line.pos1, config_line.pos2)
-            sqlength1 = edge1.sqlength
-            sqlength2 = edge2.sqlength
+            sqlength1 = edge1.sq_length
+            sqlength2 = edge2.sq_length
             if sqlength1 >= NUMERICAL_TOLERANCE and sqlength2 >= NUMERICAL_TOLERANCE:
                 cp = edge1.direction3d.cross(edge2.direction3d)
                 if cp.mag2() > NUMERICAL_TOLERANCE:
@@ -264,16 +272,16 @@ class ConfigSpace:
                 continue
 
             if point_to_segment_sq_distance(edge1.pos1, edge2) < NUMERICAL_TOLERANCE_SQ or point_to_segment_sq_distance(edge1.pos2, edge2) < NUMERICAL_TOLERANCE_SQ:
-                pos_min1 = min_union(edge1.pos1, edge1.pos2)
-                pos_max1 = max_union(edge1.pos1, edge1.pos2)
-                pos_min2 = min_union(edge2.pos1, edge2.pos2)
-                pos_max2 = max_union(edge2.pos1, edge2.pos2)
-                posMin = min_union(pos_min1, pos_min2)
-                posMax = max_union(pos_max1, pos_max2)
+                pos_min1 = edge1.pos1.minimum(edge1.pos2)
+                pos_max1 = edge1.pos1.maximum(edge1.pos2)
+                pos_min2 = edge2.pos1.minimum(edge2.pos2)
+                pos_max2 = edge2.pos1.maximum(edge2.pos2)
+                pos_min = pos_min1.minimum(pos_min2)
+                pos_max = pos_max1.maximum(pos_max2)
                 pos1, pos2 = Vector2(0, 0), Vector2(0, 0)
                 for j in range(2):
-                    pos1[j] = posMin[j] if line.pos1[j] == pos_min1[j] else posMax[j]
-                    pos2[j] = posMax[j] if line.pos1[j] == pos_min1[j] else posMin[j]
+                    pos1[j] = pos_min[j] if line.pos1[j] == pos_min1[j] else pos_max[j]
+                    pos2[j] = pos_max[j] if line.pos1[j] == pos_min1[j] else pos_min[j]
 
                 line.pos1 = pos1
                 line.pos2 = pos2
@@ -281,7 +289,7 @@ class ConfigSpace:
                 break
 
         if not merge_flag:
-            config_space_new.add_config_line(config_line)
+            config_space_new.config_lines.append(config_line)
 
         return config_space_new
 
@@ -323,13 +331,44 @@ class ConfigSpace:
 if __name__ == '__main__':
     room1 = Room()
     room1.vertices.append(Vector2(0, 0))
-    room1.vertices.append(Vector2(0, 1))
-    room1.vertices.append(Vector2(1, 1))
-    room1.vertices.append(Vector2(1, 0))
+    room1.vertices.append(Vector2(0, 4))
+    room1.vertices.append(Vector2(4, 4))
+    room1.vertices.append(Vector2(4, 0))
+    room1.reset_door_flags()
+    room1.set_door_flag(2, True)
+    print(room1)
+
+    # room2 = Room()
+    # room2.vertices.append(Vector2(2, 4))
+    # room2.vertices.append(Vector2(2, 50))
+    # room2.vertices.append(Vector2(6, 50))
+    # room2.vertices.append(Vector2(6, 4))
+    # room2.reset_door_flags()
+    # room2.set_door_flag(0, True)
+
     room2 = Room()
-    room2.vertices.append(Vector2(0, 0))
-    room2.vertices.append(Vector2(0, 1))
-    room2.vertices.append(Vector2(1, 1))
-    room2.vertices.append(Vector2(1, 0))
+    room2.vertices.append(Vector2(4, 2))
+    room2.vertices.append(Vector2(4, 10))
+    room2.vertices.append(Vector2(8, 10))
+    room2.vertices.append(Vector2(8, 2))
+    room2.reset_door_flags()
+    room2.set_door_flag(0, True)
+
+    print(room2)
+
     config_space = ConfigSpace(room1, room2)
     print(config_space)
+
+    r1 = OrthogonalPolygon.from_positions(room1.vertices)
+    r2 = OrthogonalPolygon.from_positions(room2.vertices)
+
+    # print(room1)
+    # print(room2)
+
+    g = nx.Graph()
+    g = nx.compose(g, r1)
+    g = nx.compose(g, r2)
+    for line in config_space.config_lines:
+        p = OrthogonalPolygon.from_positions([line.pos1, line.pos2])
+        g = nx.compose(g, p)
+    utils.draw_map(g, [])

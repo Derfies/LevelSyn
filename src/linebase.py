@@ -9,5 +9,5 @@ class LineBase:
         return (self.pos2 - self.pos1).mag()
 
     @property
-    def sqlength(self):
+    def sq_length(self):
         return (self.pos2 - self.pos1).mag2()

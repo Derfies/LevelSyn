@@ -15,7 +15,6 @@ class Room:
         self.door_flags = []
         self.centre_shift = Vector2(0, 0)
         self.energy = 1
-
         self.reset_energy()
         self.reset_door_flags()
 
@@ -32,9 +31,9 @@ class Room:
         return len(self.walls)
 
     def __str__(self):
-        str_ = f'A room with {self.num_of_vertices} vertices...\n'
+        str_ = f'Room with {self.num_of_vertices} vertices\n'
         for i in range(self.num_of_vertices):
-            str_ += f'{i}th vertex: {self.vertices[i]}\n'
+            str_ += f'    {i}th vertex: {self.vertices[i]}\n'
         return str_
 
     def get_edge(self, idx):
