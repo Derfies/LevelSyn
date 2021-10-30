@@ -32,8 +32,8 @@ class Room:
 
     def __str__(self):
         str_ = f'Room with {self.num_of_vertices} vertices\n'
-        for i in range(self.num_of_vertices):
-            str_ += f'    {i}th vertex: {self.vertices[i]}\n'
+        for i, vertex in enumerate(self.vertices):
+            str_ += f'    {i}th vertex: {vertex}\n'
         return str_
 
     def get_edge(self, idx):
@@ -42,6 +42,7 @@ class Room:
         edge = RoomEdge(self.vertices[idx1], self.vertices[idx2]) 
         edge.idx1 = idx1
         edge.idx2 = idx2
+        #print(self.num_of_edges, self.door_flags)
         edge.door_flag = self.door_flags[idx]
         return edge
     
@@ -49,7 +50,8 @@ class Room:
         centre = Vector2(0, 0)
         if not self.num_of_vertices:
             return centre
-    
+
+        # TODO: min / max can take a list.
         pos_min = Vector2(1e10, 1e10)
         pos_max = Vector2(-1e10, -1e10)
         for i in range(self.num_of_vertices):
@@ -65,7 +67,7 @@ class Room:
     
     def translate_room(self, trans):
         for i in range(self.num_of_vertices):
-            self.vertices[i] = self.vertices[i] + trans
+            self.vertices[i] += trans
     
     def rotate_room(self, rad):
         cv = math.cos(rad)

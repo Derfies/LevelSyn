@@ -10,6 +10,9 @@ class RoomEdge(LineBase):
         self.idx2 = -1
         self.door_flag = True
 
+    def __str__(self):
+        return f'RoomEdge: {self.pos1} {self.pos2}'
+
     @property
     def direction(self):
         return self.pos2 - self.pos1

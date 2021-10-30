@@ -1,6 +1,8 @@
 import math
+from functools import cmp_to_key
 
 import numpy as np
+from dataclasses import dataclass
 
 from reactor.geometry.vector import Vector2, Vector3
 
@@ -9,8 +11,15 @@ NUMERICAL_TOLERANCE = 1e-4
 NUMERICAL_TOLERANCE_SQ = NUMERICAL_TOLERANCE * NUMERICAL_TOLERANCE
 
 
+@dataclass
+class PrSort:
+
+    m_pr: Vector2
+    m_dp: float
+
+
 def point_to_segment_sq_distance(pt, line):
-    if line.sq_length < NUMERICAL_TOLERANCE * NUMERICAL_TOLERANCE:
+    if line.sq_length < NUMERICAL_TOLERANCE_SQ:
         return (pt - line.pos1).mag2()
     d1 = (pt - line.pos1).mag2()
     d2 = (pt - line.pos2).mag2()
@@ -28,12 +37,6 @@ def point_to_segment_sq_distance(pt, line):
         d = d * d
     return d
 
-#
-# def point_to_line_sq_distance(pt, line):
-#     return point_to_line_sq_distance(pt, line.pos2, line.pos1)
-#
-#
-# def point_to_line_sq_distance(pt, p1, p2):
 
 def point_to_line_sq_distance(pt, *args):
     try:
@@ -113,7 +116,7 @@ def edge_contact(line1, line2):
     if d1 > numerical_tolerance_sq or d2 > numerical_tolerance_sq:
         return 0.0
 
-    # Now the two edges should be in the same line.
+    # Now the two edges should be in the same line (parallel?).
     len1 = pe1.mag()
     len2 = pe2.mag()
     d11 = (line1.pos1 - line2.pos1).mag2()
@@ -184,31 +187,33 @@ def line_intersection(Ax, Ay, Bx, By, Cx, Cy, Dx, Dy, Ix, Iy):
 
 
 def compare_pr_smaller_first(pr1, pr2):
-    return pr1.m_dp < pr2.m_dp
+    if pr1.m_dp == pr2.m_dp:
+        return 0
+    else:
+        return 1 if pr1.m_dp < pr2.m_dp else -1
 
 
 def sort_vec_pr(vec_pr):
-    return np.sort(vec_pr)
-    # if len(vec_pr) < 2:
-    #     return
-    #
-    # pd = vec_pr[1] - vec_pr[0]
-    # vec_pr_sort = [] * len(vec_pr)#std.vector<PrSort> vec_pr_sort(vec_pr.size())
-    # for i in range(len(vec_pr_sort)):
-    #     vec_pr_sort[i].m_pr = vec_pr[i]
-    #     vec_pr_sort[i].m_dp = pd.dot(vec_pr[i] - vec_pr[0])
-    #
-    # sort(vec_pr_sort.begin(), vec_pr_sort.end(), compare_pr_smaller_first)
-    # for i in range(len(vec_pr_sort)):
-    #     vec_pr[i] = vec_pr_sort[i].m_pr
+    if len(vec_pr) < 2:
+        return
+    pd = vec_pr[1] - vec_pr[0]
+    pr_sorts = []
+    for i in range(len(vec_pr)):
+        pr_sort = PrSort(
+            vec_pr[i],
+            pd.dot(vec_pr[i] - vec_pr[0])
+        )
+        pr_sorts.append(pr_sort)
+    pr_sorts.sort(key=cmp_to_key(compare_pr_smaller_first))
+    for i in range(len(pr_sorts)):
+        vec_pr[i] = pr_sorts[i].m_pr
 
 
 def random_color_from_index(self, idx):
     clrs = Vector3(0, 0, 0)
     if clrs.empty():
         clrs.resize(256)
-        #for (c = 0; c < clrs.size(); c++)
         for c in range(len(clrs)):
-            clrs[c] = Vector3(rand(), rand(), rand())
+            clrs[c] = Vector3(random.random(), random.random(), random.random())
             clrs[c] = clrs[c] / max(clrs[c])
     return (clrs[idx & 255])

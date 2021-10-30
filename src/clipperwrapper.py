@@ -1,3 +1,7 @@
+from reactor.geometry.orthogonalpolygon import OrthogonalPolygon
+from reactor.linesweeper import LineSweeper
+
+
 SCALING_FACTOR = 1e10
 
 
@@ -31,19 +35,12 @@ SCALING_FACTOR = 1e10
 
 def compute_collide_area(room1, room2):
 
-    # TODO: Replace with bools intersect.
-    return 0
-    #
-    # #sol = find_intersection(room1, room2)
-    # collide_area = 0
-    # for (i = 0; i < int(sol.size()); i++)
-    #     a = Area(sol[i])
-    #     collide_area += abs(convert_double_area_to_float(a))
-    #
-    # if collide_area < 10e-4:
-    #     collide_area = 0
-    #
-    # return collide_area
+    # TODO: Don't need to reverse if verts are in anti-clockwise order to
+    # start with.
+    p1 = OrthogonalPolygon.from_positions(list(reversed(room1.vertices)))
+    p2 = OrthogonalPolygon.from_positions(list(reversed(room2.vertices)))
+    g = LineSweeper(p1, p2).intersect()
+    return len(g.nodes) > 0
 
 
 def compute_room_area(room):
