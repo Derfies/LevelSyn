@@ -362,7 +362,7 @@ def open_doors(self, layout, layoutShrinked, graph, thrinkDist):
         roomIdx2 = ge.GetIdx1()
         room1 = layout.get_room(roomIdx1)
         room2 = layout.get_room(roomIdx2)
-        if room1.GetFlagFixed() == True or room2.GetFlagFixed() == True:
+        if room1.GetFlagFixed() or room2.GetFlagFixed() == True:
             continue
 
         int edgeIdx1, edgeIdx2
@@ -615,7 +615,7 @@ def synthesize_scene_via_main_loop(self):
 
                 #float CLevelSynth.get_layout_energy(CRoomLayout& layout, graph, collide_area, connectivity)
 
-                flag_valid = LayoutCollide(self.layout) <= g_numericalTolerance and CheckRoomConnectivity(self.layout, self.graph) <= g_numericalTolerance
+                flag_valid = LayoutCollide(self.layout) <= g_numericalTolerance and check_room_connectivity(self.layout, self.graph) <= g_numericalTolerance
                 if not flag_valid:
                     # Skip invalid solution...
                     continue
@@ -1434,7 +1434,7 @@ def get_layout_energyEarlyOut(self, layout, graph, collide_area, connectivity, r
     # do connectivity first, it's (probably?) cheaper
 
     if CLevelConfig.m_sigmaConnectivity > 0.f:
-        connectivity = CheckRoomConnectivity(layout, graph, True, roomMoved)
+        connectivity = check_room_connectivity(layout, graph, True, roomMoved)
         (*energy_tmp) *= exp(connectivity * CLevelConfig.m_sigmaConnectivity)
 
     if *energy_tmp > energy_current:
@@ -1449,8 +1449,8 @@ def get_layout_energyEarlyOut(self, layout, graph, collide_area, connectivity, r
 
 
     if SIGMA_CONTACT > 0.f:
-        contactArea = LayoutContact(layout, graph, True, CLevelConfig.m_flagNonOverlapContact)
-        (*energy_tmp) *= exp(-contactArea * SIGMA_CONTACT)
+        contact_area = LayoutContact(layout, graph, True, CLevelConfig.m_flagNonOverlapContact)
+        (*energy_tmp) *= exp(-contact_area * SIGMA_CONTACT)
 
     return True
 
@@ -1463,24 +1463,24 @@ def get_layout_energy(self, layout, graph, collide_area, connectivity, roomMoved
         layout_energy *= math.exp(collide_area * CLevelConfig.m_sigmaCollide)
 
     if CLevelConfig.m_sigmaConnectivity > 0:
-        connectivity = CheckRoomConnectivity(layout, graph, True, roomMoved)
+        connectivity = check_room_connectivity(layout, graph, True, roomMoved)
         layout_energy *= math.exp(connectivity * CLevelConfig.m_sigmaConnectivity)
 
     if SIGMA_CONTACT > 0 and do_contact:
-        contactArea = -LayoutContact(layout, graph, True, CLevelConfig.m_flagNonOverlapContact, indices)
+        contact_area = -LayoutContact(layout, graph, True, CLevelConfig.m_flagNonOverlapContact, indices)
 
-        if contactArea >= 0.0:
-            contactArea = 0.0
+        if contact_area >= 0.0:
+            contact_area = 0.0
 
-        if contactArea < 0:
-            layout_energy *= math.exp(contactArea / SIGMA_CONTACT)
+        if contact_area < 0:
+            layout_energy *= math.exp(contact_area / SIGMA_CONTACT)
 
     return layout_energy
 
 
-def CheckRoomConnectivity(self, layout, graph, flagVisitedOnly ''' = False ''', roomMoved):
-    connectivity = 0.f
-    if graph == NULL:
+def check_room_connectivity(self, layout, graph, flagVisitedOnly ''' = False ''', roomMoved):
+    connectivity = 0.0
+    if graph == None:
         return connectivity
 
     for (i = 0; i < graph.GetNumOfEdges(); i++):
@@ -1489,40 +1489,32 @@ def CheckRoomConnectivity(self, layout, graph, flagVisitedOnly ''' = False ''', 
         idx1 = edge.GetIdx1()
         flagVisited0 = graph.get_node(idx0).flag_visited
         flagVisited1 = graph.get_node(idx1).flag_visited
-        if flagVisitedOnly == True and (flagVisited0 == False or flagVisited1 == False):
+        if flagVisitedOnly and (not flagVisited0 or not flagVisited1):
             continue
 
         flagFixed0 = graph.get_node(idx0).GetFlagFixed()
         flagFixed1 = graph.get_node(idx1).GetFlagFixed()
-        if flagFixed0 == True and flagFixed1 == True:
+        if flagFixed0 and flagFixed1:
             continue
 
         if roomMoved == -1 or roomMoved == idx0 or roomMoved == idx1 or layout.cachedConnectivities.find(std.make_pair(idx0, idx1)) == layout.cachedConnectivities.end():
-            contactArea = RoomContact(layout.get_room(idx0), layout.get_room(idx1))
-            if contactArea <= CLevelConfig.m_roomContactThresh:
+            contact_area = RoomContact(layout.get_room(idx0), layout.get_room(idx1))
+            if contact_area <= CLevelConfig.m_roomContactThresh:
                 if CLevelConfig.m_flagDiscreteConnectFunc == True:
                     connectivity += 1.f
                     layout.cachedConnectivities[std.make_pair(idx0, idx1)] = 1.f
-
                 else:
                     d = RoomDistance(layout.get_room(idx0), layout.get_room(idx1))
                     d += CLevelConfig.m_roomContactThresh
                     layout.cachedConnectivities[std.make_pair(idx0, idx1)] = d
                     connectivity += d
-
-                factor = 1.1f
+                factor = 1.1
                 layout.get_room(idx0).UpdateEnergy(factor)
                 layout.get_room(idx1).UpdateEnergy(factor)
-
             else:
                 layout.cachedConnectivities[std.make_pair(idx0, idx1)] = 0.0f
-
-
         else:
             connectivity += layout.cachedConnectivities[std.make_pair(idx0, idx1)]
-
-
-
     return connectivity
 
 
@@ -1534,12 +1526,12 @@ def LayoutCollide(self, layout, graph, flagVisitedOnly ''' = False ''', roomThat
         for (j = i + 1; j < numOfRooms; j++):
             flagVisited0 = graph.get_node(i).flag_visited
             flagVisited1 = graph.get_node(j).flag_visited
-            if flagVisitedOnly == True and (flagVisited0 == False or flagVisited1 == False):
+            if flagVisitedOnly and (flagVisited0 == False or flagVisited1 == False):
                 continue
 
             flagFixed0 = graph.get_node(i).GetFlagFixed()
             flagFixed1 = graph.get_node(j).GetFlagFixed()
-            if flagFixed0 == True and flagFixed1 == True:
+            if flagFixed0 and flagFixed1 == True:
                 continue
 
             if roomThatMoved == -1 or roomThatMoved == i or roomThatMoved == j or layout.cachedCollisionEnergies.find(std.make_pair(i, j)) == layout.cachedCollisionEnergies.end():
@@ -1637,7 +1629,7 @@ def TestBoundingBoxCollides(self, bb1, bb2):
 
 
 def LayoutContact(self, layout, graph, flagVisitedOnly ''' = False ''', flagNonOverlap ''' = False ''', indices, roomThatMoved ''' probably == null '''):
-    contactAreaTotal = 0.f
+    contact_areaTotal = 0.f
     contactCount = 0
     numOfRooms = layout.GetNumOfRooms()
 
@@ -1669,7 +1661,7 @@ def LayoutContact(self, layout, graph, flagVisitedOnly ''' = False ''', flagNonO
 
         for (j = i + 1; j < numOfRooms; j++):
             flagVisited1 = graph.get_node(j).flag_visited
-            if flagVisitedOnly == True and (flagVisited0 == False or flagVisited1 == False):
+            if flagVisitedOnly and (flagVisited0 == False or flagVisited1 == False):
                 continue
 
             if i == roomThatMoved or j == roomThatMoved or roomThatMoved == -1 or layout.cachedContacts.find(std.make_pair(i, j)) == layout.cachedContacts.end():
@@ -1677,11 +1669,11 @@ def LayoutContact(self, layout, graph, flagVisitedOnly ''' = False ''', flagNonO
                     layout.cachedContacts[std.make_pair(i, j)] = 0.0f
                     continue
 
-                contactArea = RoomContact(layout.get_room(i), layout.get_room(j))
-                if (contactArea > CLevelConfig.m_roomContactThresh) #0.f
-                    contactArea -= CLevelConfig.m_roomContactThresh
-                    layout.cachedContacts[std.make_pair(i, j)] = contactArea
-                    perimeter -= contactArea
+                contact_area = RoomContact(layout.get_room(i), layout.get_room(j))
+                if (contact_area > CLevelConfig.m_roomContactThresh) #0.f
+                    contact_area -= CLevelConfig.m_roomContactThresh
+                    layout.cachedContacts[std.make_pair(i, j)] = contact_area
+                    perimeter -= contact_area
                     contactCount++
 
 
@@ -1690,14 +1682,14 @@ def LayoutContact(self, layout, graph, flagVisitedOnly ''' = False ''', flagNonO
 
 
         if perimeter > 0:
-            contactAreaTotal += perimeter
+            contact_areaTotal += perimeter
 
 
 #ifdef PRINT_OUT_DEBUG_INFO
     print(f'Number of contacting room pairs: {contactCount}')
-    print(f'Total area of contacting area: {contactAreaTotal}')
+    print(f'Total area of contacting area: {contact_areaTotal}')
 #endif
-    return contactAreaTotal
+    return contact_areaTotal
 
 
 def ComputeLabelPosition(self, idx, graph, labelRad):
