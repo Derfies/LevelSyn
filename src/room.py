@@ -137,5 +137,8 @@ class Room:
                 return True
         return False
 
+    def update_energy(self, factor):
+        self.energy += factor
+
     def reset_energy(self):
         self.energy = 1

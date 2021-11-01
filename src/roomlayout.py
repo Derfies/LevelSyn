@@ -90,9 +90,9 @@ class RoomLayout:
             roomPositions[i] = GetRoom(i).GetRoomCenter()
         return roomPositions
 
-    def ResetRoomEnergies(self):
-        for (i = 0; i < GetNumOfRooms(); i++)
-            GetRoom(i).ResetEnergy()
+    def reset_room_energies(self):
+        for room in self.rooms:
+            room.reset_energy()
 
     def ConvertPos(self, p, pMin, pMax, sz):
         pd = (p - pMin) / (pMax - pMin) * sz
