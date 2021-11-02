@@ -31,7 +31,7 @@ class Room:
         return len(self.walls)
 
     def __str__(self):
-        str_ = f'Room with {self.num_vertices} vertices\n'
+        str_ = f'Room [{id(self)}] with {self.num_vertices} vertices\n'
         for i, vertex in enumerate(self.vertices):
             str_ += f'    {i}th vertex: {vertex}\n'
         return str_

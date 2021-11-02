@@ -23,7 +23,7 @@ class LevelConfig:
     SA_PROB_0 = 0.001
     SA_PROB_1 = 0.7
     DELTA_E_SCALING = 1.0
-    SIGMA_COLLIDE = 50.0
+    SIGMA_COLLIDE = 5.0
     SIGMA_CONTACT = 1.0
     SIGMA_CONNECTIVITY = 2.0
     GRAPH_SCALING = 1.0

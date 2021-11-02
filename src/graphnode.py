@@ -8,15 +8,18 @@ class GraphNode:
     def __init__(self, g, node):
         self.g = g
         self.node = node
-        self.randomly_init_pos()
-        self.flag_visited = False
-        self.flag_fixed = False
+        if self.pos is None:
+            self.randomly_init_pos()
+        if self.flag_visited is None:
+            self.flag_visited = False
+        if self.flag_fixed is None:
+            self.flag_fixed = False
         self.type = 0
         self.boundary_type = 0
 
     @property
     def flag_visited(self):
-        return self.g.nodes[self.node]['flag_visited']
+        return self.g.nodes[self.node].get('flag_visited')
 
     @flag_visited.setter
     def flag_visited(self, value):
@@ -24,7 +27,7 @@ class GraphNode:
 
     @property
     def flag_fixed(self):
-        return self.g.nodes[self.node]['flag_fixed']
+        return self.g.nodes[self.node].get('flag_fixed')
 
     @flag_fixed.setter
     def flag_fixed(self, value):
@@ -32,7 +35,7 @@ class GraphNode:
 
     @property
     def pos(self):
-        return self.g.nodes[self.node]['position']
+        return self.g.nodes[self.node].get('position')
 
     @pos.setter
     def pos(self, pos):

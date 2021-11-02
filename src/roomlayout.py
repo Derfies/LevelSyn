@@ -6,6 +6,8 @@ class RoomLayout:
     def __init__(self):
         self.rooms = []
         self.corridor_walls = []
+        self.cached_collision_energies = {}
+        self.cached_connectivities = {}
 
     def __str__(self):
         str_ = f'Layout with {self.num_rooms} rooms\n'

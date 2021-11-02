@@ -260,10 +260,17 @@ class ConfigSpace:
                 else:
 
                     # Parallel...
-                    pos_min1 = min_union(p11, p12)
-                    pos_max1 = max_union(p11, p12)
-                    pos_min2 = min_union(p21, p22)
-                    pos_max2 = max_union(p21, p22)
+                    # pos_min1 = min_union(p11, p12)
+                    # pos_max1 = max_union(p11, p12)
+                    # pos_min2 = min_union(p21, p22)
+                    # pos_max2 = max_union(p21, p22)
+
+                    pos_min1 = p11.minimum(p12)
+                    pos_max1 = p11.maximum(p12)
+                    pos_min2 = p21.minimum(p22)
+                    pos_max2 = p21.maximum(p22)
+
+
                     flag_overlap = True
                     for j in range(2):
                         if pos_max1[j] < pos_min2[j] - NUMERICAL_TOLERANCE or pos_min1[j] > pos_max2[j] + NUMERICAL_TOLERANCE:
@@ -287,7 +294,7 @@ class ConfigSpace:
                         p2[d] = min(max(p11[d], p12[d]), max(p21[d], p22[d]))
 
                     intersect_line = ConfigLine(p1, p2)
-                    intersect_space.add_config_line(intersect_line)
+                    intersect_space.config_lines.append(intersect_line)
 
         return intersect_space
 

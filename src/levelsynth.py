@@ -1,5 +1,6 @@
-import math
+import copy
 import random
+import math
 
 from dataclasses import dataclass
 
@@ -8,7 +9,7 @@ from configspace import ConfigSpace
 from levelconfig import LevelConfig
 from roomlayout import RoomLayout
 from reactor.geometry.vector import Vector2
-from levelmath import NUMERICAL_TOLERANCE
+from levelmath import NUMERICAL_TOLERANCE, room_contact, room_distance
 
 
 @dataclass
@@ -179,12 +180,12 @@ class LevelSynth:
     #
     def init_scene(self):
         self.layout.clear_layout()
-        num_rooms = self.graph.num_nodes
+        #num_rooms =
         num_templates = self.templates.num_templates
-        for i in range(num_rooms):
+        for i in range(self.graph.num_nodes):
             #idx = int(rand() / float(RAND_MAX) * num_templates)
-            idx = self.graph.get_node(i).type
-            idx = idx % num_templates
+            idx = self.graph.get_node(i).type % num_templates
+            #idx = idx
             room = self.templates.rooms[idx]
             #room.ScaleRoom(0.5f)
             pi = self.graph.get_node_pos(i)
@@ -195,7 +196,7 @@ class LevelSynth:
             # if mag2(color) > 2.5f:
             #     color = color * 0.5f
             # room.SetColor(color)
-            self.layout.rooms.append(room)
+            self.layout.rooms.append(copy.deepcopy(room))
 
     def get_layout(self, graph, room_positions):
         layout = RoomLayout()
@@ -547,7 +548,7 @@ class LevelSynth:
             indices = old_state.my_indices
             if LevelConfig().SYNTHESIS_METHOD != 0:
                 if not self.graph.has_fixed_node() or not self.graph.visited_no_node():
-                    indices = self.graph.GetUnfixedNodes()
+                    indices = self.graph.get_unfixed_nodes()
 
             for i in range(len(tmp_indices)):
                 indices.append(tmp_indices[i])
@@ -991,11 +992,12 @@ class LevelSynth:
                         layout_tmp.rooms[idx].translate_room(-pos_cen)
     #endif
                 energy_tmp, collide_area, connectivity = self.get_layout_energy(layout_tmp, graph_tmp)
-                print(f'energy_tmp: {energy_tmp}', collide_area, connectivity)
+                #print(f'energy_tmp: {energy_tmp}', collide_area, connectivity)
                 if collide_area <= NUMERICAL_TOLERANCE and connectivity <= NUMERICAL_TOLERANCE:
                     new_state = old_state
                     new_state.state_graph = graph
                     new_state.state_room_positions = layout_tmp.get_room_positions()
+                    #print('state_room_positions:', new_state.state_room_positions)
                     new_state.state_energy = energy_tmp
                     new_state.move_rooms_to_scene_centre(graph)
                     new_state.insert_to_new_states(new_states, graph)
@@ -1304,12 +1306,12 @@ class LevelSynth:
         config_space = ConfigSpace()
         connected_indices = self.get_connected_indices(graph, picked_room_index)
         if len(connected_indices) >= 1:
-            random_shuffle(connected_indices.begin(), connected_indices.end())
+            random.shuffle(connected_indices)
             idx0 = connected_indices[0]
-            config_space0 = ConfigSpace(layout.get_room(idx0), picked_room)
+            config_space0 = ConfigSpace(layout.rooms[idx0], picked_room)
             config_space = config_space0
             for i in range(len(connected_indices)):
-                config_space_tmp = ConfigSpace(layout.get_room(connected_indices[i]), picked_room)
+                config_space_tmp = ConfigSpace(layout.rooms[connected_indices[i]], picked_room)
                 config_space_new = ConfigSpace.find_intersection(config_space, config_space_tmp)
                 if config_space_new.is_empty:
                     break
@@ -1353,13 +1355,15 @@ class LevelSynth:
                 print(f'Break from the while loop after reaching enough number of trials in randomly_adjust_one_room04()!')
                 return -1
 
+
         graph.get_node(picked_room_index).type = type_new
-        room = self.templates.rooms[type_new]
+        room = copy.deepcopy(self.templates.rooms[type_new])
         p1 = room.get_room_centre()
         p2 = picked_room.get_room_centre()
         dp = p2 - p1
         room.translate_room(dp)
-        picked_room = room
+        #picked_room = room
+        layout.rooms[picked_room_index] = room
 #if 1 # New on 09/15/2013
         #sample_config_space_for_picked_room(layout, graph, indices, picked_room_index)
 #endif
@@ -1402,12 +1406,12 @@ class LevelSynth:
             connectivity = self.check_room_connectivity(layout, graph, True, room_moved)
             layout_energy *= math.exp(connectivity * LevelConfig().SIGMA_CONNECTIVITY)
 
-        if LevelConfig().SIGMA_CONTACT > 0 and do_contact:
-            contact_area = -self.layout_contact(layout, graph, True, LevelConfig().FLAG_NON_OVERLAP_CONTACT, indices)
-            if contact_area >= 0.0:
-                contact_area = 0.0
-            if contact_area < 0:
-                layout_energy *= math.exp(contact_area / LevelConfig().SIGMA_CONTACT)
+        # if LevelConfig().SIGMA_CONTACT > 0 and do_contact:
+        #     contact_area = -self.layout_contact(layout, graph, True, LevelConfig().FLAG_NON_OVERLAP_CONTACT, indices)
+        #     if contact_area >= 0.0:
+        #         contact_area = 0.0
+        #     if contact_area < 0:
+        #         layout_energy *= math.exp(contact_area / LevelConfig().SIGMA_CONTACT)
 
         return layout_energy, collide_area, connectivity
 
@@ -1431,13 +1435,13 @@ class LevelSynth:
                 continue
 
             if room_moved == -1 or room_moved == idx0 or room_moved == idx1 or layout.cached_connectivities.find((idx0, idx1)) == layout.cached_connectivities.end():
-                contact_area = self.room_contact(layout.get_room(idx0), layout.get_room(idx1))
+                contact_area = room_contact(layout.rooms[idx0], layout.rooms[idx1])
                 if contact_area <= LevelConfig().ROOM_CONTACT_THRESHOLD:
                     if LevelConfig().FLAG_DISCRETE_CONNECT_FUNC:
                         connectivity += 1
                         layout.cached_connectivities[(idx0, idx1)] = 1
                     else:
-                        d = room_distance(layout.get_room(idx0), layout.get_room(idx1))
+                        d = room_distance(layout.rooms[idx0], layout.rooms[idx1])
                         d += LevelConfig().ROOM_CONTACT_THRESHOLD
                         layout.cached_connectivities[(idx0, idx1)] = d
                         connectivity += d
@@ -1461,19 +1465,19 @@ class LevelSynth:
                 if flag_visited_only and (not flag_visited0 or not flag_visited1):
                     continue
 
-                flag_fixed0 = graph.get_node(i).get_flag_fixed()
-                flag_fixed1 = graph.get_node(j).get_flag_fixed()
+                flag_fixed0 = graph.get_node(i).flag_fixed
+                flag_fixed1 = graph.get_node(j).flag_fixed
                 if flag_fixed0 and flag_fixed1:
                     continue
 
                 if room_that_moved == -1 or room_that_moved == i or room_that_moved == j or layout.cached_collision_energies.find((i, j)) == layout.cached_collision_energies.end():
-                    collide_area = self.room_collides(layout.get_room(i), layout.get_room(j))
+                    collide_area = self.room_collides(layout.rooms[i], layout.rooms[j])
                     if collide_area > 0:
                         collide_area_total += collide_area
                         collide_count += 1
                         factor = math.exp(collide_area)
-                        layout.get_room(i).update_energy(factor)
-                        layout.get_room(j).update_energy(factor)
+                        layout.rooms[i].update_energy(factor)
+                        layout.rooms[j].update_energy(factor)
                         layout.cached_collision_energies[(i, j)] = collide_area
                     else:
                         layout.cached_collision_energies[(i, j)] = collide_area
@@ -1537,7 +1541,7 @@ class LevelSynth:
     #     return collide_area
     #
     def test_bounding_box_collides(self, bb1, bb2):
-        if j in range(2):
+        for j in range(2):
             if bb1.pos_max[j] < bb2.pos_min[j] or bb1.pos_min[j] > bb2.pos_max[j]:
                 return False
         return True
