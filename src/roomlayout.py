@@ -70,7 +70,7 @@ class RoomLayout:
     def get_layout_bounding_box(self):
         pos_min, pos_max = Vector2(1e10, 1e10), Vector2(-1e10, -1e10)
         for i in range(self.num_rooms):
-            pmin_tmp, pmax_tmp = self.get_room(i).get_bounding_box()
+            pmin_tmp, pmax_tmp = self.rooms[i].get_room_bounding_box()
             for j in range(2):
                 pos_min[j] = min(pos_min[j], pmin_tmp[j])
                 pos_max[j] = max(pos_max[j], pmax_tmp[j])
@@ -80,7 +80,7 @@ class RoomLayout:
         pos_min, pos_max = self.get_layout_bounding_box()
         pos_cen = (pos_min + pos_max) * 0.5
         for i in range(self.num_rooms):
-            self.get_room(i).translate_room(-pos_cen)
+            self.rooms[i].translate_room(-pos_cen)
 
     # def GetRoomPositions(self):
     #     std.vector<v2f> roomPositions(GetNumOfRooms())

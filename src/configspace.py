@@ -20,7 +20,6 @@ from levelmath import (
     sort_vec_pr,
 )
 from linebase import LineBase
-from room import Room
 from roomedge import RoomEdge
 from roomtemplates import RoomTemplates
 

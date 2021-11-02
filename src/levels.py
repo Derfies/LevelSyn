@@ -19,8 +19,7 @@ def main(argv):
     if len(argv) > 4:
         level_config.target_num_solutions = int(argv[4])
 
-    planar_graph = PlanarGraph()
-    planar_graph.load(argv[1])
+    planar_graph = PlanarGraph.load(argv[1])
 
     room_templates = RoomTemplates()
     room_templates.load(argv[2])

@@ -1,10 +1,20 @@
 import math
 import random
 
+from dataclasses import dataclass
+
+from clipperwrapper import compute_collide_area
 from configspace import ConfigSpace
 from levelconfig import LevelConfig
 from roomlayout import RoomLayout
 from reactor.geometry.vector import Vector2
+
+
+@dataclass
+class AABB2:
+
+	pos_min: Vector2
+	pos_max: Vector2
 
 
 def random2(max_):
@@ -92,6 +102,7 @@ class LevelSynth:
         self.backtrack_level = 0
         self.layout = RoomLayout()
         self.visited_neighbours = []
+        self.sequence = []
 
     def set_graph_and_templates(self, graph, templates):
         self.solution_count = 0
@@ -110,7 +121,7 @@ class LevelSynth:
         self.room_positions = []
         for i in range(self.graph.num_nodes):
             pi = self.graph.get_node_pos(i)
-            self.room_positions[i] = pi
+            self.room_positions.append(pi)
     #
     # def MovePickedGraphNode(self, dx, dy):
     #     self.graph.move_picked_node(dx, dy)
@@ -171,9 +182,9 @@ class LevelSynth:
         num_templates = self.templates.num_templates
         for i in range(num_rooms):
             #idx = int(rand() / float(RAND_MAX) * num_templates)
-            idx = self.graph.get_node(i).get_type()
+            idx = self.graph.get_node(i).type
             idx = idx % num_templates
-            room = self.templates.get_room(idx)
+            room = self.templates.rooms[idx]
             #room.ScaleRoom(0.5f)
             pi = self.graph.get_node_pos(i)
             c = room.get_room_centre()
@@ -183,7 +194,7 @@ class LevelSynth:
             # if mag2(color) > 2.5f:
             #     color = color * 0.5f
             # room.SetColor(color)
-            self.layout.add_room(room)
+            self.layout.rooms.append(room)
 
     def get_layout(self, graph, room_positions):
         layout = RoomLayout()
@@ -191,9 +202,9 @@ class LevelSynth:
         num_templates = self.templates.num_templates
         #for (i = 0; i < num_rooms; i++):
         for i in range(num_rooms):
-            idx = graph.get_node(i).get_type()
+            idx = graph.get_node(i).type
             idx = idx % num_templates
-            room = self.templates.get_room(idx)
+            room = self.templates.rooms[idx]
             pi = room_positions[i]
             c = room.get_room_centre()
             trans = pi - c
@@ -203,8 +214,8 @@ class LevelSynth:
            #     color = color * 0.5f
 
             #room.SetColor(color)
-            room.set_flag_fixed(graph.get_node(i).get_flag_fixed())
-            layout.add_room(room)
+            room.flag_fixed = graph.get_node(i).flag_fixed
+            layout.rooms.append(room)
 
         return layout
 
@@ -215,8 +226,8 @@ class LevelSynth:
     def update_graph_from_layout(self):
         num_rooms = self.graph.num_nodes
         for i in range(num_rooms):
-            room_centre = self.layout.get_room(i).get_room_centre()
-            self.graph.get_node(i).set_pos(room_centre)
+            room_centre = self.layout.rooms[i].get_room_centre()
+            self.graph.get_node(i).pos = room_centre
     #
     # def PostProcessing(self, layout, graph):
     #     for (i = 0; i < layout.Getnum_rooms(); i++):
@@ -526,11 +537,11 @@ class LevelSynth:
             tmp_indices = self.graph.extract_deepest_face_or_chain(flag_cyclic, LevelConfig().FLAG_SMALL_FACE_FIRST)
             indices = []
     #if 0 # Before 09/03/2013
-            if LevelConfig().SYNTHESIS_METHOD != 0 :
-                # Select all the graph nodes...
-                indices.resize(self.graph.num_nodes)
-                for i in range(len(indices)):
-                    indices[i] = i
+            # if LevelConfig().SYNTHESIS_METHOD != 0 :
+            #     # Select all the graph nodes...
+            #     indices.resize(self.graph.num_nodes)
+            #     for i in range(len(indices)):
+            #         indices[i] = i
     #else:
             indices = old_state.my_indices
             if LevelConfig().SYNTHESIS_METHOD != 0:
@@ -542,11 +553,11 @@ class LevelSynth:
     #endif
             self.set_visited_neighbours(indices)
             for i in range(self.graph.num_nodes):
-                self.graph.get_node(i).set_flag_visited(False)
+                self.graph.get_node(i).flag_visited = False
 
             for i in range(len(indices)):
                 index = indices[i]
-                self.graph.get_node(indices[i]).set_flag_visited(True)
+                self.graph.get_node(indices[i]).flag_visited = True
 
             old_state.state_graph = self.graph
             new_states = []
@@ -586,14 +597,13 @@ class LevelSynth:
                     self.solution_count += 1
 
             else:
-                #for (i = int(new_states.size()) - 1; i >= 0; i--):
                 for i in reversed(range(len(new_states))):
                     new_states[i].my_indices = indices
                     #new_states[i].state_graph = *self.graph
                     graph_best = new_states[i].state_graph
                     for n in range(graph_best.num_nodes):
                         pn = new_states[i].state_room_positions[n]
-                        graph_best.get_node(n).set_pos(pn)
+                        graph_best.get_node(n).pos = pn
 
                     layout_best = self.get_layout(graph_best, new_states[i].state_room_positions)
                     #ofstream fout
@@ -614,6 +624,7 @@ class LevelSynth:
     #endif
     #
     def solve_1d_chain(self, indices, weighted_indices, old_state, new_states):
+        print(LevelConfig().FLAG_USE_ILS)
         if LevelConfig().FLAG_USE_ILS:
             return self.solve_1d_chainILS(indices, old_state, new_states)
     #
@@ -934,7 +945,7 @@ class LevelSynth:
         graph = old_state.state_graph
         self.set_sequence_as_1d_chain(indices, graph)
         new_states.clear()
-        if graph.get_node(indices[0]).get_flag_fixed:
+        if graph.get_node(indices[0]).flag_fixed:
             old_state.insert_to_new_states(new_states, graph)
             return True
 
@@ -970,14 +981,14 @@ class LevelSynth:
                     p_max = Vector2(-1e10, -1e10)
                     for d in range(len(indices)):
                         idx = indices[d]
-                        pj = layout_tmp.get_room(idx).get_room_centre()
+                        pj = layout_tmp.rooms[idx].get_room_centre()
                         for k in range(2):
                             p_min[k] = min(p_min[k], pj[k])
                             p_max[k] = max(p_max[k], pj[k])
                     pos_cen = (p_min + p_max) * 0.5
                     for d in range(len(indices)):
                         idx = indices[d]
-                        layout_tmp.get_room(idx).translate_room(-pos_cen)
+                        layout_tmp.rooms[idx].translate_room(-pos_cen)
     #endif
                 energy_tmp = self.get_layout_energy(layout_tmp, graph_tmp, collide_area, connectivity)
                 if collide_area <= self.numerical_tolerance and connectivity <= self.numerical_tolerance:
@@ -1031,7 +1042,7 @@ class LevelSynth:
     def set_sequence_as_1d_chain(self, indices, graph):
         self.sequence.clear()
         for i in range(len(indices)):
-            idx = graph.get_node(indices[i]).get_type()
+            idx = graph.get_node(indices[i]).type
             idx = idx % self.templates.num_templates
             self.sequence.append(idx)
 
@@ -1319,7 +1330,7 @@ class LevelSynth:
     #     picked_room_index = randomly_pick_one_room(layout, indices, weighted_indices)
     #     picked_room = layout.get_room(picked_room_index)
     #
-    #     typeOld = graph.get_node(picked_room_index).get_type()
+    #     typeOld = graph.get_node(picked_room_index).type
     #     typeNew = typeOld
     #     boundaryOld = graph.get_node(picked_room_index).GetBoundaryType()
     #     boundaryNew = -1
@@ -1371,101 +1382,101 @@ class LevelSynth:
     #
     #     return True
     #
-    # def get_layout_energy(self, layout, graph, collide_area, connectivity, room_moved, do_contact, indices):
-    #     layout.reset_room_energies()
-    #     layout_energy = 1.0
-    #     if SIGMA_COLLIDE > 0:
-    #         collide_area = self.layout_collide(layout, graph, True, room_moved)
-    #         layout_energy *= math.exp(collide_area * SIGMA_COLLIDE)
+    def get_layout_energy(self, layout, graph, collide_area, connectivity, room_moved=-1, do_contact=False, indices=None):
+        layout.reset_room_energies()
+        layout_energy = 1.0
+        if LevelConfig().SIGMA_COLLIDE > 0:
+            collide_area = self.layout_collide(layout, graph, True, room_moved)
+            layout_energy *= math.exp(collide_area * LevelConfig().SIGMA_COLLIDE)
+
+        if LevelConfig().SIGMA_CONNECTIVITY > 0:
+            connectivity = self.check_room_connectivity(layout, graph, True, room_moved)
+            layout_energy *= math.exp(connectivity * LevelConfig().SIGMA_CONNECTIVITY)
+
+        if LevelConfig().SIGMA_CONTACT > 0 and do_contact:
+            contact_area = -self.layout_contact(layout, graph, True, LevelConfig().FLAG_NON_OVERLAP_CONTACT, indices)
+            if contact_area >= 0.0:
+                contact_area = 0.0
+            if contact_area < 0:
+                layout_energy *= math.exp(contact_area / LevelConfig().SIGMA_CONTACT)
+
+        return layout_energy
     #
-    #     if SIGMA_CONNECTIVITY > 0:
-    #         connectivity = self.check_room_connectivity(layout, graph, True, room_moved)
-    #         layout_energy *= math.exp(connectivity * SIGMA_CONNECTIVITY)
+    def check_room_connectivity(self, layout, graph, flag_visited_only=False, room_moved=-1):
+        connectivity = 0.0
+        if graph is None:
+            return connectivity
+
+        for i in range(len(graph.edges)):
+            edge = graph.get_edge(i)
+            idx0 = edge.idx0
+            idx1 = edge.idx1
+            flag_visited0 = graph.get_node(idx0).flag_visited
+            flag_visited1 = graph.get_node(idx1).flag_visited
+            if flag_visited_only and (not flag_visited0 or not flag_visited1):
+                continue
+
+            flag_fixed0 = graph.get_node(idx0).flag_fixed
+            flag_fixed1 = graph.get_node(idx1).flag_fixed
+            if flag_fixed0 and flag_fixed1:
+                continue
+
+            if room_moved == -1 or room_moved == idx0 or room_moved == idx1 or layout.cached_connectivities.find((idx0, idx1)) == layout.cached_connectivities.end():
+                contact_area = self.room_contact(layout.get_room(idx0), layout.get_room(idx1))
+                if contact_area <= LevelConfig().ROOM_CONTACT_THRESHOLD:
+                    if LevelConfig().FLAG_DISCRETE_CONNECT_FUNC:
+                        connectivity += 1
+                        layout.cached_connectivities[(idx0, idx1)] = 1
+                    else:
+                        d = room_distance(layout.get_room(idx0), layout.get_room(idx1))
+                        d += LevelConfig().ROOM_CONTACT_THRESHOLD
+                        layout.cached_connectivities[(idx0, idx1)] = d
+                        connectivity += d
+                    factor = 1.1
+                    layout.get_room(idx0).update_energy(factor)
+                    layout.get_room(idx1).update_energy(factor)
+                else:
+                    layout.cached_connectivities[(idx0, idx1)] = 0.0
+            else:
+                connectivity += layout.cached_connectivities[(idx0, idx1)]
+        return connectivity
     #
-    #     if SIGMA_CONTACT > 0 and do_contact:
-    #         contact_area = -self.layout_contact(layout, graph, True, FLAG_NON_OVERLAP_CONTACT, indices)
-    #         if contact_area >= 0.0:
-    #             contact_area = 0.0
-    #         if contact_area < 0:
-    #             layout_energy *= math.exp(contact_area / SIGMA_CONTACT)
-    #
-    #     return layout_energy
-    #
-    # def check_room_connectivity(self, layout, graph, flag_visited_only=False, room_moved):
-    #     connectivity = 0.0
-    #     if graph is None:
-    #         return connectivity
-    #
-    #     for i in range(len(graph.edges)):
-    #         edge = graph.get_edge(i)
-    #         idx0 = edge.idx0
-    #         idx1 = edge.idx1
-    #         flag_visited0 = graph.get_node(idx0).flag_visited
-    #         flag_visited1 = graph.get_node(idx1).flag_visited
-    #         if flag_visited_only and (not flag_visited0 or not flag_visited1):
-    #             continue
-    #
-    #         flag_fixed0 = graph.get_node(idx0).get_flag_fixed()
-    #         flag_fixed1 = graph.get_node(idx1).get_flag_fixed()
-    #         if flag_fixed0 and flag_fixed1:
-    #             continue
-    #
-    #         if room_moved == -1 or room_moved == idx0 or room_moved == idx1 or layout.cached_connectivities.find(std.make_pair(idx0, idx1)) == layout.cached_connectivities.end():
-    #             contact_area = self.room_contact(layout.get_room(idx0), layout.get_room(idx1))
-    #             if contact_area <= ROOM_CONTACT_THRESH:
-    #                 if FLAG_DISCRETE_CONNECT_FUNC:
-    #                     connectivity += 1
-    #                     layout.cached_connectivities[std.make_pair(idx0, idx1)] = 1
-    #                 else:
-    #                     d = room_distance(layout.get_room(idx0), layout.get_room(idx1))
-    #                     d += ROOM_CONTACT_THRESH
-    #                     layout.cached_connectivities[std.make_pair(idx0, idx1)] = d
-    #                     connectivity += d
-    #                 factor = 1.1
-    #                 layout.get_room(idx0).update_energy(factor)
-    #                 layout.get_room(idx1).update_energy(factor)
-    #             else:
-    #                 layout.cached_connectivities[std.make_pair(idx0, idx1)] = 0.0
-    #         else:
-    #             connectivity += layout.cached_connectivities[std.make_pair(idx0, idx1)]
-    #     return connectivity
-    #
-    # def layout_collide(self, layout, graph, flag_visited_only= False, room_that_moved=-1):
-    #     collide_area_total = 0
-    #     collide_count = 0
-    #     num_rooms = layout.num_rooms
-    #     for i in range(num_rooms):
-    #         for j in range(num_rooms):
-    #             flag_visited0 = graph.get_node(i).flag_visited
-    #             flag_visited1 = graph.get_node(j).flag_visited
-    #             if flag_visited_only and (not flag_visited0 or not flag_visited1):
-    #                 continue
-    #
-    #             flag_fixed0 = graph.get_node(i).get_flag_fixed()
-    #             flag_fixed1 = graph.get_node(j).get_flag_fixed()
-    #             if flag_fixed0 and flag_fixed1:
-    #                 continue
-    #
-    #             if room_that_moved == -1 or room_that_moved == i or room_that_moved == j or layout.cached_collision_energies.find(std.make_pair(i, j)) == layout.cached_collision_energies.end():
-    #                 collide_area = self.room_collides(layout.get_room(i), layout.get_room(j))
-    #                 if collide_area > 0:
-    #                     collide_area_total += collide_area
-    #                     collide_count += 1
-    #                     factor = math.exp(collide_area)
-    #                     layout.get_room(i).update_energy(factor)
-    #                     layout.get_room(j).update_energy(factor)
-    #                     layout.cached_collision_energies[std.make_pair(i, j)] = collide_area
-    #                 else:
-    #                     layout.cached_collision_energies[std.make_pair(i, j)] = collide_area
-    #             else:
-    #                 collide_area_total += layout.cached_collision_energies[std.make_pair(i, j)]
-    #
-    # #ifdef PRINT_OUT_DEBUG_INFO
-    #     print(f'Number of colliding room pairs: {collide_count}')
-    #     print(f'Total area of colliding area: {collide_area_total}')
-    # #endif
-    #     return collide_area_total
-    #
+    def layout_collide(self, layout, graph, flag_visited_only=False, room_that_moved=-1):
+        collide_area_total = 0
+        collide_count = 0
+        num_rooms = layout.num_rooms
+        for i in range(num_rooms):
+            for j in range(num_rooms):
+                flag_visited0 = graph.get_node(i).flag_visited
+                flag_visited1 = graph.get_node(j).flag_visited
+                if flag_visited_only and (not flag_visited0 or not flag_visited1):
+                    continue
+
+                flag_fixed0 = graph.get_node(i).get_flag_fixed()
+                flag_fixed1 = graph.get_node(j).get_flag_fixed()
+                if flag_fixed0 and flag_fixed1:
+                    continue
+
+                if room_that_moved == -1 or room_that_moved == i or room_that_moved == j or layout.cached_collision_energies.find((i, j)) == layout.cached_collision_energies.end():
+                    collide_area = self.room_collides(layout.get_room(i), layout.get_room(j))
+                    if collide_area > 0:
+                        collide_area_total += collide_area
+                        collide_count += 1
+                        factor = math.exp(collide_area)
+                        layout.get_room(i).update_energy(factor)
+                        layout.get_room(j).update_energy(factor)
+                        layout.cached_collision_energies[(i, j)] = collide_area
+                    else:
+                        layout.cached_collision_energies[(i, j)] = collide_area
+                else:
+                    collide_area_total += layout.cached_collision_energies[(i, j)]
+
+    #ifdef PRINT_OUT_DEBUG_INFO
+        print(f'Number of colliding room pairs: {collide_count}')
+        print(f'Total area of colliding area: {collide_area_total}')
+    #endif
+        return collide_area_total
+
     # def layout_collide(self, layout):
     #     collide_area_total = 0
     #     collide_count = 0
@@ -1486,22 +1497,20 @@ class LevelSynth:
     # #endif
     #     return collide_area_total
     #
-    # def room_collides(self, room1, room2):
-    #     collide_area = -1
-    #
-    #     # Test the bounding box first...
-    #     AABB2f bb1, bb2
-    #     room1.get_room_bounding_box(bb1)
-    #     room2.get_room_bounding_box(bb2)
-    #     if not TestBoundingBoxCollides(bb1, bb2):
-    #         return 0.0
-    #
-    #     # Use the Clipper library...
-    #     CClipperWrapper wrapper
-    #     collide_area = wrapper.Computecollide_area(room1, room2)
-    #
-    #     return collide_area
-    #
+    def room_collides(self, room1, room2):
+        collide_area = -1
+
+        # Test the bounding box first...
+        bb1 = AABB2(*room1.get_room_bounding_box())
+        bb2 = AABB2(*room2.get_room_bounding_box())
+        if not self.test_bounding_box_collides(bb1, bb2):
+            return 0.0
+
+        # Use the Clipper library...
+        collide_area = compute_collide_area(room1, room2)
+
+        return collide_area
+
     # def BoundingBoxCollidesArea(self, bb1, bb2):
     #     collide_area = -1.f
     #     for (j = 0; j < 2; j++):
@@ -1518,12 +1527,12 @@ class LevelSynth:
     #
     #     return collide_area
     #
-    # def TestBoundingBoxCollides(self, bb1, bb2):
-    #     for (j = 0; j < 2; j++):
-    #         if bb1.m_posMax[j] < bb2.m_posMin[j] or bb1.m_posMin[j] > bb2.m_posMax[j]:
-    #             return False
-    #     return True
-    #
+    def test_bounding_box_collides(self, bb1, bb2):
+        if j in range(2):
+            if bb1.pos_max[j] < bb2.pos_min[j] or bb1.pos_min[j] > bb2.pos_max[j]:
+                return False
+        return True
+
     # def layout_contact(self, layout, graph, flag_visited_only ''' = False ''', flagNonOverlap ''' = False ''', indices, room_that_moved ''' probably == null '''):
     #     contact_areaTotal = 0.f
     #     contactCount = 0
@@ -1557,20 +1566,20 @@ class LevelSynth:
     #             if flag_visited_only and (flag_visited0 == False or flag_visited1 == False):
     #                 continue
     #
-    #             if i == room_that_moved or j == room_that_moved or room_that_moved == -1 or layout.cachedContacts.find(std.make_pair(i, j)) == layout.cachedContacts.end():
+    #             if i == room_that_moved or j == room_that_moved or room_that_moved == -1 or layout.cachedContacts.find((i, j)) == layout.cachedContacts.end():
     #                 if room_collides(layout.get_room(i), layout.get_room(j)) > 0.f:
-    #                     layout.cachedContacts[std.make_pair(i, j)] = 0.0f
+    #                     layout.cachedContacts[(i, j)] = 0.0f
     #                     continue
     #
     #                 contact_area = room_contact(layout.get_room(i), layout.get_room(j))
     #                 if (contact_area > ROOM_CONTACT_THRESH) #0.f
     #                     contact_area -= ROOM_CONTACT_THRESH
-    #                     layout.cachedContacts[std.make_pair(i, j)] = contact_area
+    #                     layout.cachedContacts[(i, j)] = contact_area
     #                     perimeter -= contact_area
     #                     contactCount++
     #
     #             else:
-    #                 perimeter -= layout.cachedContacts[std.make_pair(i, j)]
+    #                 perimeter -= layout.cachedContacts[(i, j)]
     #
     #         if perimeter > 0:
     #             contact_areaTotal += perimeter

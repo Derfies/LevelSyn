@@ -100,7 +100,7 @@ def LoadGraphFromXML(self, fileName, flagDetectFaces ''' = True ''', flagIgnoreI
         xmlNode = xmlNode.NextSibling()
 
 
-    SetNodeNeighbors()
+    SetNodeneighbours()
     if flagIgnoreIndiv == True:
         RemoveIndividualNodes()
 
@@ -194,9 +194,9 @@ def AddGraphNodes(self, numOfNodes, parent ''' = -1 '''):
 
 
 
-def SetNodeNeighbors(self):
+def SetNodeneighbours(self):
     for (i = 0; i < int(m_nodes.size()); i++)
-        m_nodes[i].ClearNeighbors()
+        m_nodes[i].Clearneighbours()
 
     for (i = 0; i < int(m_edges.size()); i++)
         idx0 = m_edges[i].GetIdx0()
@@ -219,7 +219,7 @@ def PickClosestNode(self, px, py):
             m_pickedNodeIndex = i
 
 
-    std.cout << "Have picked the " << m_pickedNodeIndex << "th node centered at " << GetNodePos(m_pickedNodeIndex) << "not \n"
+    std.cout << "Have picked the " << m_pickedNodeIndex << "th node centered at " << self.get_nodePos(m_pickedNodeIndex) << "not \n"
 
 
 def MovePickedNode(self, dx, dy):
@@ -277,14 +277,14 @@ def RandomInitGraph(self):
 
 def RandomInitPositions(self):
     for (i = 0; i < GetNumOfNodes(); i++)
-        GetNode(i).RandomlyInitPos()
+        self.get_node(i).RandomlyInitPos()
 
 
 
 def RandomInitTypes(self):
     for (i = 0; i < GetNumOfNodes(); i++)
         type = int(rand() / float(RAND_MAX) * m_numOfTypes)
-        GetNode(i).SetType(type)
+        self.get_node(i).SetType(type)
 
 
 
@@ -362,7 +362,7 @@ def SortAdjacentVertices(self, g, vert, adjacentEdges):
     v1_0 = boost.source(adjacentEdges[0], g)
     v2_0 = boost.target(adjacentEdges[0], g)
     v_0 = (v1_0 == vert) ? v2_0 : v1_0
-    edgeRef = GetNode(v_0).GetPos() - GetNode(vert).GetPos()
+    edgeRef = self.get_node(v_0).GetPos() - self.get_node(vert).GetPos()
     for (i = 0; i < adjacentEdges.size(); ++i)
         for (j = i + 1; j < adjacentEdges.size(); ++j)
             v1_i = boost.source(adjacentEdges[i], g)
@@ -371,8 +371,8 @@ def SortAdjacentVertices(self, g, vert, adjacentEdges):
             v1_j = boost.source(adjacentEdges[j], g)
             v2_j = boost.target(adjacentEdges[j], g)
             v_j = (v1_j == vert) ? v2_j : v1_j
-            edgePr1 = GetNode(v_i).GetPos() - GetNode(vert).GetPos()
-            edgePr2 = GetNode(v_j).GetPos() - GetNode(vert).GetPos()
+            edgePr1 = self.get_node(v_i).GetPos() - self.get_node(vert).GetPos()
+            edgePr2 = self.get_node(v_j).GetPos() - self.get_node(vert).GetPos()
             if CompareEdgeDirections(edgePr1, edgePr2, edgeRef) == True:
                 std.swap(adjacentEdges[i], adjacentEdges[j])
 
@@ -445,7 +445,7 @@ def RemoveTheOutsideFace(self):
 
 def VisitedAllNodes(self):
     for (i = 0; i < GetNumOfNodes(); i++)
-        if GetNode(i).GetFlagVisited() == False:
+        if self.get_node(i).GetFlagVisited() == False:
             return False
 
 
@@ -454,7 +454,7 @@ def VisitedAllNodes(self):
 
 def VisitedNoNode(self):
     for (i = 0; i < GetNumOfNodes(); i++)
-        if GetNode(i).GetFlagVisited() == True:
+        if self.get_node(i).GetFlagVisited() == True:
             return False
 
 
@@ -463,7 +463,7 @@ def VisitedNoNode(self):
 
 def HasFixedNode(self):
     for (i = 0; i < GetNumOfNodes(); i++)
-        if GetNode(i).GetFlagFixed() == True:
+        if self.get_node(i).GetFlagFixed() == True:
             return True
 
 
@@ -473,7 +473,7 @@ def HasFixedNode(self):
 def GetFixedNodes(self):
     std.vector<int> indices
     for (i = 0; i < GetNumOfNodes(); i++)
-        if GetNode(i).GetFlagFixed() == True:
+        if self.get_node(i).GetFlagFixed() == True:
             indices.push_back(i)
 
 
@@ -483,14 +483,14 @@ def GetFixedNodes(self):
 def GetUnfixedNodes(self):
     std.vector<int> indices
     for (i = 0; i < GetNumOfNodes(); i++)
-        if GetNode(i).GetFlagFixed() == False:
+        if self.get_node(i).GetFlagFixed() == False:
             indices.push_back(i)
 
 
     return indices
 
 
-def ExtractDeepestFaceOrChain(self, flagCyclic, flagSmallFaceFirst):
+def ExtractDeepestFaceOrChain(self, flagCyclic, flag_small_face_first):
     if VisitedNoNode() == True and HasFixedNode() == True:
         # Handle the fixed nodes first...
         std.vector<int> indices = GetFixedNodes()
@@ -501,13 +501,13 @@ def ExtractDeepestFaceOrChain(self, flagCyclic, flagSmallFaceFirst):
             chain = GetChain(i)
 #if 0 # Before 09/23/2013, is NOT suitable for ghost cases
 			idx0 = chain.GetIndices()[0]
-			if  GetNode(idx0).GetFlagVisited() == True :
+			if  self.get_node(idx0).GetFlagVisited() == True :
 				continue
 
 #else:
             flagAllVisited = True
             for (j = 0; j < chain.GetChainSize(); j++)
-                if GetNode(chain.GetIndices()[j]).GetFlagVisited() == False:
+                if self.get_node(chain.GetIndices()[j]).GetFlagVisited() == False:
                     flagAllVisited = False
                     break
 
@@ -521,165 +521,160 @@ def ExtractDeepestFaceOrChain(self, flagCyclic, flagSmallFaceFirst):
             return indices
 
 
-    std.vector<int> faceIndices = ExtractDeepestFace(flagSmallFaceFirst)
-    if faceIndices.empty() == False and VisitedNoNode() == True:
+    std.vector<int> face_indices = ExtractDeepestFace(flag_small_face_first)
+    if face_indices.empty() == False and VisitedNoNode() == True:
         flagCyclic = True
-        return faceIndices
+        return face_indices
 
-    faceConstraintCount = CountConstraints(faceIndices)
-    std.vector<int> chainIndices = ExtractDeepestChainNew()
-    chainConstraintCount = CountConstraints(chainIndices)
-    if faceIndices.empty() == False and faceConstraintCount > chainConstraintCount:
+    faceConstraintCount = CountConstraints(face_indices)
+    std.vector<int> chain_indices = ExtractDeepestChainNew()
+    chain_constraint_count = CountConstraints(chain_indices)
+    if face_indices.empty() == False and faceConstraintCount > chain_constraint_count:
         flagCyclic = True
-        return faceIndices
+        return face_indices
 
     else:
         flagCyclic = False
-        return chainIndices
+        return chain_indices
 
 
 
-def ExtractDeepestFaceOrChainOld(self, flagCyclic, flagSmallFaceFirst):
-    std.vector<int> faceIndices = ExtractDeepestFace(flagSmallFaceFirst)
-    if faceIndices.empty() == False:
+def ExtractDeepestFaceOrChainOld(self, flagCyclic, flag_small_face_first):
+    std.vector<int> face_indices = ExtractDeepestFace(flag_small_face_first)
+    if face_indices.empty() == False:
         flagCyclic = True
-        return faceIndices
+        return face_indices
 
     flagCyclic = False
-    std.vector<int> chainIndices = ExtractDeepestChain()
-    return chainIndices
+    std.vector<int> chain_indices = ExtractDeepestChain()
+    return chain_indices
 
 
-def ExtractDeepestFace(self, flagSmallFaceFirst):
-    std.vector<int> faceIndices
-    deepestFaceIdx = -1
-    deepestFaceSize = 0
-    smallestFaceIdx = -1
-    smallestFaceSize = std.numeric_limits<int>.max()
-    for (i = 0; i < GetNumOfFaces(); i++)
-        face = GetFace(i)
-        std.vector<int>indices = face.GetIndices()
-        flagAllNodesUnvisited = True
-        for (j = 0; j < face.GetFaceSize(); j++)
-            if GetNode(indices[j]).GetFlagVisited() == True:
-                flagAllNodesUnvisited = False
+def extract_deepest_face(self, flag_small_face_first):
+    face_indices = []
+    deepest_face_idx = -1
+    deepest_face_size = 0
+    smallest_face_idx = -1
+    smallest_face_size = 0#std.numeric_limits<int>.max()
+    for i in range(self.num_faces):
+        face = self.get_face(i)
+        indices = face.get_indices()
+        flag_all_nodes_unvisited = True
+        for j in range(face.size):
+            if self.get_node(indices[j]).flag_visited:
+                flag_all_nodes_unvisited = False
                 break
 
-
-        if flagAllNodesUnvisited == False:
+        if not flag_all_nodes_unvisited:
             continue
 
-        if face.GetFaceSize() > deepestFaceSize:
-            deepestFaceIdx = i
-            deepestFaceSize = face.GetFaceSize()
+        if face.size > deepest_face_size:
+            deepest_face_idx = i
+            deepest_face_size = face.size
 
-        if face.GetFaceSize() < smallestFaceSize:
-            smallestFaceIdx = i
-            smallestFaceSize = face.GetFaceSize()
+        if face.size < smallest_face_size:
+            smallest_face_idx = i
+            smallest_face_size = face.size
 
+    if deepest_face_idx >= 0:
+        face_indices = self.get_face(deepest_face_idx).get_indices()
 
-    if deepestFaceIdx >= 0:
-        faceIndices = GetFace(deepestFaceIdx).GetIndices()
+    if flag_small_face_first and smallest_face_idx >= 0:
+        face_indices = self.get_face(smallest_face_idx).get_indices()
 
-    if flagSmallFaceFirst == True and smallestFaceIdx >= 0:
-        faceIndices = GetFace(smallestFaceIdx).GetIndices()
-
-    return faceIndices
+    return face_indices
 
 
 def ExtractDeepestChainNew(self):
-    chainLengthMin = std.numeric_limits<int>.max()
-    chainLengthMax = 0
-    chainLengthMinC = 0
-    chainLengthMaxC = 0
-    std.vector<int> chainMin
-    std.vector<int> chainMax
-    for (i = 0; i < GetNumOfNodes(); i++)
-        if GetNode(i).GetFlagVisited() == True:
+    chain_length_min = std.numeric_limits<int>.max()
+    chain_length_max = 0
+    chain_length_min_c = 0
+    chain_length_max_c = 0
+    chain_min = []
+    chain_max = []
+    for i in range(self.num_nodes):
+        if self.get_node(i).get_flag_visted:
             continue
 
-        std.vector<int> chainIndices
+        chain_indices = []
         idx = i
-        chainIndices.push_back(idx)
-        GetNode(idx).SetFlagVisited(True)
+        chain_indices.append(idx)
+        self.get_node(idx).flag_visited = True
         # Grow the chain with unvisited nodes...
-        flagInserted = True
-        while (flagInserted)
-            flagInserted = False
-            std.vector<int>neighbors = GetNode(idx).GetNeighbors()
-            for (j = 0; j < int(neighbors.size()); j++)
-                idxTmp = neighbors[j]
-                if GetNode(idxTmp).GetFlagVisited() == False:
-                    idx = idxTmp
-                    chainIndices.push_back(idx)
-                    GetNode(idx).SetFlagVisited(True)
-                    flagInserted = True
+        flag_inserted = True
+        while flag_inserted:
+            flag_inserted = False
+            neighbours = self.get_node(idx).get_neigbours()
+            for j in range(len(neighbours)):
+                idx_tmp = neighbours[j]
+                if not self.get_node(idx_tmp).flag_visited:
+                    idx = idx_tmp
+                    chain_indices.push_back(idx)
+                    self.get_node(idx).flag_visited = True
+                    flag_inserted = True
                     break
 
-
-
-        chainLengthTmp = int(chainIndices.size())
+        chain_length_tmp = int(chain_indices.size())
         # Set the visited flags back to False...
-        for (j = 0; j < chainLengthTmp; j++)
-            GetNode(chainIndices[j]).SetFlagVisited(False)
+        for j in range(len(chain_length_tmp)):
+            self.get_node(chain_indices[j]).flag_visited = False
 
-        chainConstraintCount = CountConstraints(chainIndices)
-        if chainConstraintCount >= chainLengthMinC and chainLengthTmp < chainLengthMin:
-            chainLengthMinC = chainConstraintCount
-            chainLengthMin = chainLengthTmp
-            chainMin = chainIndices
+        chain_constraint_count = self.count_constraints(chain_indices)
+        if chain_constraint_count >= chain_length_min_c and chain_length_tmp < chain_length_min:
+            chain_length_min_c = chain_constraint_count
+            chain_length_min = chain_length_tmp
+            chain_min = chain_indices
 
-        if chainConstraintCount >= chainLengthMaxC and chainLengthTmp > chainLengthMax:
-            chainLengthMaxC = chainConstraintCount
-            chainLengthMax = chainLengthTmp
-            chainMax = chainIndices
+        if chain_constraint_count >= chain_length_max_c and chain_length_tmp > chain_length_max:
+            chain_length_max_c = chain_constraint_count
+            chain_length_max = chain_length_tmp
+            chain_max = chain_indices
 
-
-    return chainMin
+    return chain_min
 
 
 def ExtractDeepestChain(self):
-    std.vector<int> chainIndices
+    std.vector<int> chain_indices
     # Almost randomly pick an unvisited node as the start of the chain...
     idx = -1
     for (i = 0; i < GetNumOfNodes(); i++)
-        if GetNode(i).GetFlagVisited() == False:
+        if self.get_node(i).GetFlagVisited() == False:
             idx = i
-            chainIndices.push_back(idx)
-            GetNode(idx).SetFlagVisited(True)
+            chain_indices.push_back(idx)
+            self.get_node(idx).flag_visited = True
             break
 
 
     # Grow the chain with unvisited nodes...
-    flagInserted = True
-    while (flagInserted)
-        flagInserted = False
-        std.vector<int>neighbors = GetNode(idx).GetNeighbors()
-        for (i = 0; i < int(neighbors.size()); i++)
-            idxTmp = neighbors[i]
-            if GetNode(idxTmp).GetFlagVisited() == False:
-                idx = idxTmp
-                chainIndices.push_back(idx)
-                GetNode(idx).SetFlagVisited(True)
-                flagInserted = True
+    flag_inserted = True
+    while (flag_inserted)
+        flag_inserted = False
+        std.vector<int>neighbours = self.get_node(idx).Getneighbours()
+        for (i = 0; i < int(neighbours.size()); i++)
+            idx_tmp = neighbours[i]
+            if self.get_node(idx_tmp).GetFlagVisited() == False:
+                idx = idx_tmp
+                chain_indices.push_back(idx)
+                self.get_node(idx).flag_visited = True
+                flag_inserted = True
                 break
 
 
 
     # Set the visited flags back to False...
-    for (i = 0; i < int(chainIndices.size()); i++)
-        GetNode(chainIndices[i]).SetFlagVisited(False)
+    for (i = 0; i < int(chain_indices.size()); i++)
+        self.get_node(chain_indices[i]).flag_visited = False
 
-    return chainIndices
+    return chain_indices
 
 
 def CountConstraints(self, indices):
     count = 0
     for i in range(len(indices)):
         idx = indices[i]
-        neighbors = self.get_node(idx).get_neighbours()
-        for j in range(len(neighbors)):
-            idx_tmp = neighbors[j]
+        neighbours = self.get_node(idx).get_neighbours()
+        for j in range(len(neighbours)):
+            idx_tmp = neighbours[j]
             if self.get_node(idx_tmp).get_flag_visited:
                 count +=1
                 break
@@ -690,7 +685,7 @@ def GetGraphBoundingBox(self, posMin, posMax):
     v2f pMin(1e10)
     v2f pMax(-1e10)
     for (i = 0; i < GetNumOfNodes(); i++)
-        pi = GetNode(i).GetPos()
+        pi = self.get_node(i).GetPos()
         for (j = 0; j < 2; j++)
             pMin[j] = min(pMin[j], pi[j])
             pMax[j] = max(pMax[j], pi[j])
@@ -705,9 +700,9 @@ def MoveGraphToSceneCenter(self):
     GetGraphBoundingBox(posMin, posMax)
     posCen = (posMin + posMax) * 0.5f
     for (i = 0; i < GetNumOfNodes(); i++)
-        pi = GetNode(i).GetPos()
+        pi = self.get_node(i).GetPos()
         pi = pi - posCen
-        GetNode(i).SetPos(pi)
+        self.get_node(i).SetPos(pi)
 
 
 
@@ -716,9 +711,9 @@ def ScaleGraphNodePositions(self, scaling):
         return
 
     for (i = 0; i < GetNumOfNodes(); i++)
-        pi = GetNode(i).GetPos()
+        pi = self.get_node(i).GetPos()
         pi = pi * scaling
-        GetNode(i).SetPos(pi)
+        self.get_node(i).SetPos(pi)
 
 
 
@@ -752,7 +747,7 @@ def LoadChainsFromTXT(self, fileName):
 
 def FindNodeAccordingToName(self, str):
     for (i = 0; i < GetNumOfNodes(); i++)
-        if GetNode(i).GetName() == std.string(str):
+        if self.get_node(i).GetName() == std.string(str):
             return i
 
 
@@ -767,8 +762,8 @@ def RemoveIndividualNodes(self):
     std.vector<CGraphNode> nodesToKeep
     keepCount = 0
     for (i = 0; i < numOfNodes; i++)
-        node = GetNode(i)
-        if node.GetNeighbors().empty() == False:
+        node = self.get_node(i)
+        if node.Getneighbours().empty() == False:
             nodesToKeep.push_back(node)
             vecKeepFlags[i] = True
             vecNewIndices[i] = keepCount
@@ -789,5 +784,5 @@ def RemoveIndividualNodes(self):
         edge.SetIdx1(idx1)
 
 
-    SetNodeNeighbors()
+    SetNodeneighbours()
 

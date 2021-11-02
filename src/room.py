@@ -90,7 +90,7 @@ class Room:
             self.vertices[i] = centre + pi * scaling
         self.centre_shift = self.centre_shift * scaling
     
-    def get_room_bounding_box(self, pos_min, pos_max):
+    def get_room_bounding_box(self):
         p_min = Vector2(1e10, 1e10)
         p_max = Vector2(-1e10, -1e10)
         for i in range(self.num_vertices):
@@ -98,14 +98,13 @@ class Room:
             for j in range(2):
                 p_min[j] = min(p_min[j], pi[j])
                 p_max[j] = max(p_max[j], pi[j])
-        pos_min = p_min
-        pos_max = p_max
+        return p_min, p_max
     
-    def get_room_bounding_box(self, bounding_box):
-        pos_min, pos_max = Vector2(0, 0), Vector2(0, 0)
-        self.get_room_bounding_box(pos_min, pos_max)
-        bounding_box.pos_min = pos_min
-        bounding_box.pos_max = pos_max
+    # def get_room_bounding_box(self, bounding_box):
+    #     pos_min, pos_max = Vector2(0, 0), Vector2(0, 0)
+    #     self.get_room_bounding_box(pos_min, pos_max)
+    #     bounding_box.pos_min = pos_min
+    #     bounding_box.pos_max = pos_max
     
     def init_walls(self):
         self.walls.clear()
@@ -133,12 +132,12 @@ class Room:
     
     def has_restricted_door_position(self):
         for i in range(len(self.door_flags)):
-            if self.door_flags[i] == False:
+            if not self.door_flags[i]:
                 return True
         return False
 
     def update_energy(self, factor):
-        self.energy += factor
+        self.energy *= factor
 
     def reset_energy(self):
         self.energy = 1
