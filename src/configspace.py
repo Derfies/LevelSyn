@@ -323,8 +323,6 @@ class ConfigSpace:
                     break
                 continue
 
-            print('    compare existing:', edge1, 'incoming ->', edge2)
-
             # Getting duplicate config lines here due to some bug which isn't
             # detecting colinear lines.
             # Switched these args around for the moment. Don't think that's the
@@ -356,8 +354,6 @@ class ConfigSpace:
         return config_space_new
 
     def merge(self):
-
-        print('MERGE CALLED')
 
         # TODO: Reimplement this.
         #sort(self.config_lines.begin(), self.config_lines.end(), self.compare_config_line_length)

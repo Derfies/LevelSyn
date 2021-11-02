@@ -39,7 +39,7 @@ def main(argv):
     level_synthesizer.set_graph_and_templates(planar_graph, room_templates)
     elapse_time = time.time() - old_time
 
-    print(f'Have found {level_synthesizer.get_solutions_count()} solution(s) within {elapse_time} seconds.')
+    print(f'Have found {level_synthesizer.solution_count} solution(s) within {elapse_time} seconds.')
 
     return 0
 

@@ -675,17 +675,14 @@ def ExtractDeepestChain(self):
 
 def CountConstraints(self, indices):
     count = 0
-    for (i = 0; i < int(indices.size()); i++)
+    for i in range(len(indices)):
         idx = indices[i]
-        std.vector<int>neighbors = GetNode(idx).GetNeighbors()
-        for (j = 0; j < int(neighbors.size()); j++)
-            idxTmp = neighbors[j]
-            if GetNode(idxTmp).GetFlagVisited() == True:
-                count++
+        neighbors = self.get_node(idx).get_neighbours()
+        for j in range(len(neighbors)):
+            idx_tmp = neighbors[j]
+            if self.get_node(idx_tmp).get_flag_visited:
+                count +=1
                 break
-
-
-
     return count
 
 

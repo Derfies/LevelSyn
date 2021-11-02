@@ -2,6 +2,8 @@ import math
 import random
 
 from configspace import ConfigSpace
+from levelconfig import LevelConfig
+from roomlayout import RoomLayout
 from reactor.geometry.vector import Vector2
 
 
@@ -88,12 +90,14 @@ class LevelSynth:
         self.chain_count = 0
         self.backtrack_count = 0
         self.backtrack_level = 0
+        self.layout = RoomLayout()
+        self.visited_neighbours = []
 
     def set_graph_and_templates(self, graph, templates):
         self.solution_count = 0
         self.best_sol_count = 0
-        graph.move_graph_to_scene_center()
-        graph.scale_graph_node_positions(GRAPH_SCALING)
+        graph.move_graph_to_scene_centre()
+        graph.scale_graph_node_positions(LevelConfig().GRAPH_SCALING)
         self.set_graph(graph)
         self.templates = templates
         self.graph.num_types = self.templates.num_templates
@@ -101,13 +105,12 @@ class LevelSynth:
         self.init_scene()
         self.synthesize_scene()
 
-    # def set_graph(self, graph):
-    #     self.graph = graph
-    #     #room_positions.resize(self.graph.num_nodes)
-    #     self.room_positions = []
-    #     for i in range(self.graph.num_nodes):
-    #         pi = self.graph.get_node_pos(i)
-    #         self.room_positions[i] = pi
+    def set_graph(self, graph):
+        self.graph = graph
+        self.room_positions = []
+        for i in range(self.graph.num_nodes):
+            pi = self.graph.get_node_pos(i)
+            self.room_positions[i] = pi
     #
     # def MovePickedGraphNode(self, dx, dy):
     #     self.graph.move_picked_node(dx, dy)
@@ -162,57 +165,58 @@ class LevelSynth:
     #
     #     return flag
     #
-    # def init_scene(self):
-    #     self.layout.clear_layout()
-    #     num_rooms = self.graph.num_nodes
-    #     num_templates = self.templates.num_templates
-    #     for i in range(num_rooms):
-    #         #idx = int(rand() / float(RAND_MAX) * num_templates)
-    #         idx = self.graph.get_node(i).get_type()
-    #         idx = idx % num_templates
-    #         room = self.templates.get_room(idx)
-    #         #room.ScaleRoom(0.5f)
-    #         pi = self.graph.get_node_pos(i)
-    #         c = room.get_room_centre()
-    #         trans = pi - c
-    #         room.translate_room(trans)
-    #         color = randomColorFromIndex(i)
-    #         if mag2(color) > 2.5f:
-    #             color = color * 0.5f
-    #         room.SetColor(color)
-    #         self.layout.add_room(room)
-    #
-    # def get_layout(self, graph, room_positions):
-    #     CRoomLayout layout
-    #     num_rooms = graph.num_nodes
-    #     num_templates = self.templates.num_templates
-    #     for (i = 0; i < num_rooms; i++):
-    #         idx = graph.get_node(i).get_type()
-    #         idx = idx % num_templates
-    #         room = self.templates.get_room(idx)
-    #         pi = room_positions[i]
-    #         c = room.get_room_centre()
-    #         trans = pi - c
-    #         room.translate_room(trans)
-    #         color = randomColorFromIndex(i)
-    #         if mag2(color) > 2.5f:
-    #             color = color * 0.5f
-    #
-    #         room.SetColor(color)
-    #         room.SetFlagFixed(graph.get_node(i).get_flag_fixed())
-    #         layout.add_room(room)
-    #
-    #     return layout
-    #
-    # def synthesize_scene(self):
-    #     self.synthesize_scene_via_main_loop()
-    #     self.update_graph_from_layout()
-    #
-    # def update_graph_from_layout(self):
-    #     num_rooms = self.graph.num_nodes
-    #     for i in range(num_rooms):
-    #         room_centre = self.layout.get_room(i).get_room_centre()
-    #         self.graph.get_node(i).set_pos(room_centre)
+    def init_scene(self):
+        self.layout.clear_layout()
+        num_rooms = self.graph.num_nodes
+        num_templates = self.templates.num_templates
+        for i in range(num_rooms):
+            #idx = int(rand() / float(RAND_MAX) * num_templates)
+            idx = self.graph.get_node(i).get_type()
+            idx = idx % num_templates
+            room = self.templates.get_room(idx)
+            #room.ScaleRoom(0.5f)
+            pi = self.graph.get_node_pos(i)
+            c = room.get_room_centre()
+            trans = pi - c
+            room.translate_room(trans)
+            # color = randomColorFromIndex(i)
+            # if mag2(color) > 2.5f:
+            #     color = color * 0.5f
+            # room.SetColor(color)
+            self.layout.add_room(room)
+
+    def get_layout(self, graph, room_positions):
+        layout = RoomLayout()
+        num_rooms = graph.num_nodes
+        num_templates = self.templates.num_templates
+        #for (i = 0; i < num_rooms; i++):
+        for i in range(num_rooms):
+            idx = graph.get_node(i).get_type()
+            idx = idx % num_templates
+            room = self.templates.get_room(idx)
+            pi = room_positions[i]
+            c = room.get_room_centre()
+            trans = pi - c
+            room.translate_room(trans)
+           # color = randomColorFromIndex(i)
+           # if mag2(color) > 2.5f:
+           #     color = color * 0.5f
+
+            #room.SetColor(color)
+            room.set_flag_fixed(graph.get_node(i).get_flag_fixed())
+            layout.add_room(room)
+
+        return layout
+
+    def synthesize_scene(self):
+        self.synthesize_scene_via_main_loop()
+        self.update_graph_from_layout()
+
+    def update_graph_from_layout(self):
+        num_rooms = self.graph.num_nodes
+        for i in range(num_rooms):
+            room_centre = self.layout.get_room(i).get_room_centre()
+            self.graph.get_node(i).set_pos(room_centre)
     #
     # def PostProcessing(self, layout, graph):
     #     for (i = 0; i < layout.Getnum_rooms(); i++):
@@ -426,7 +430,7 @@ class LevelSynth:
     #
     # # def SaveGraphAsSVG(self, fileName, graph, wd ''' = 400 ''', ht ''' = 400 ''', labelRad ''' = 0.25f '''):
     # #     graphNew = *graph
-    # #     graphNew.move_graph_to_scene_center()
+    # #     graphNew.move_graph_to_scene_centre()
     # #     strokeWd = 5
     # #     circleRad = 7
     # #     Vector2posMin, posMax
@@ -501,117 +505,117 @@ class LevelSynth:
     # def CompareStateEnergySmallerFirst(self, state1, state2):
     #     return state1.state_energy < state2.state_energy
     #
-    # def synthesize_scene_via_main_loop(self):
-    #     state0 = CurrentState()
-    #     state0.state_graph = self.graph
-    #     state0.state_room_positions = self.room_positions
-    #     state0.state_energy = 1e10
-    #     state_stack = []
-    #     state_stack.insert(0, state0)
-    #     target_num_solutions = TARGET_NUM_SOLUTIONS
-    #     energy_min = 1e10
-    #     layout_best = self.layout
-    #     num_partials = 0
-    #     self.backtrack_count = 0
-    #     self.backtrack_level = 0
-    #     while self.solution_count < target_num_solutions and state_stack:
-    #         old_state = state_stack.pop(0)
-    #         self.set_current_state(old_state)
-    #         self.flag_visited_node = self.graph.visited_no_node()
-    #         flag_cyclic = False
-    #         tmp_indices = self.graph.extract_deepest_face_or_chain(flag_cyclic, FLAG_SMALL_FACE_FIRST)
-    #         indices = []
-    # #if 0 # Before 09/03/2013
-    #         if SYN_METHOD != 0 :
-    #             # Select all the graph nodes...
-    #             indices.resize(self.graph.num_nodes)
-    #             for i in range(len(indices)):
-    #                 indices[i] = i
-    # #else:
-    #         indices = old_state.my_indices
-    #         if SYN_METHOD != 0:
-    #             if not self.graph.has_fixed_node() or not self.graph.visited_no_node():
-    #                 indices = self.graph.GetUnfixedNodes()
+    def synthesize_scene_via_main_loop(self):
+        state0 = CurrentState()
+        state0.state_graph = self.graph
+        state0.state_room_positions = self.room_positions
+        state0.state_energy = 1e10
+        state_stack = []
+        state_stack.insert(0, state0)
+        target_num_solutions = LevelConfig().TARGET_NUM_SOLUTIONS
+        energy_min = 1e10
+        layout_best = self.layout
+        num_partials = 0
+        self.backtrack_count = 0
+        self.backtrack_level = 0
+        while self.solution_count < target_num_solutions and state_stack:
+            old_state = state_stack.pop(0)
+            self.set_current_state(old_state)
+            self.flag_visited_node = self.graph.visited_no_node()
+            flag_cyclic = False
+            tmp_indices = self.graph.extract_deepest_face_or_chain(flag_cyclic, LevelConfig().FLAG_SMALL_FACE_FIRST)
+            indices = []
+    #if 0 # Before 09/03/2013
+            if LevelConfig().SYNTHESIS_METHOD != 0 :
+                # Select all the graph nodes...
+                indices.resize(self.graph.num_nodes)
+                for i in range(len(indices)):
+                    indices[i] = i
+    #else:
+            indices = old_state.my_indices
+            if LevelConfig().SYNTHESIS_METHOD != 0:
+                if not self.graph.has_fixed_node() or not self.graph.visited_no_node():
+                    indices = self.graph.GetUnfixedNodes()
+
+            for i in range(len(tmp_indices)):
+                indices.append(tmp_indices[i])
+    #endif
+            self.set_visited_neighbours(indices)
+            for i in range(self.graph.num_nodes):
+                self.graph.get_node(i).set_flag_visited(False)
+
+            for i in range(len(indices)):
+                index = indices[i]
+                self.graph.get_node(indices[i]).set_flag_visited(True)
+
+            old_state.state_graph = self.graph
+            new_states = []
+            self.chain_count += 1
+            flag = self.solve_1d_chain(indices, tmp_indices, old_state, new_states)
+            if not new_states:
+    #ifndef PERFORMANCE_TEST
+                print(f'Backtracked from level {self.backtrack_level} to level {self.backtrack_level - 1}!')
+    #endif
+                self.backtrack_count += 1
+                self.backtrack_level -= 1
+            else:
+                self.backtrack_level += 1
+
+            if self.graph.visited_all_nodes():
+                for i in range(len(new_states)):
+                    if self.solution_count >= target_num_solutions:
+                        break
+
+                    self.set_current_state(new_states[i])
+                    if new_states[i].state_energy < energy_min:
+                        energy_min = new_states[i].state_energy
+                        layout_best = self.layout
+
+                    #float collide
+                    #float connectivity
+                    energy = self.get_layout_energy(self.layout, self.graph, collide, connectivity)
+
+                    #float CLevelSynth.get_layout_energy(CRoomLayout& layout, graph, collide_area, connectivity)
+
+                    flag_valid = self.layout_collide(self.layout) <= self.numerical_tolerance and self.check_room_connectivity(self.layout, self.graph) <= self.numerical_tolerance
+                    if not flag_valid:
+                        # Skip invalid solution...
+                        continue
+
+                    #DumpSolutionIntoXML()
+                    self.solution_count += 1
+
+            else:
+                #for (i = int(new_states.size()) - 1; i >= 0; i--):
+                for i in reversed(range(len(new_states))):
+                    new_states[i].my_indices = indices
+                    #new_states[i].state_graph = *self.graph
+                    graph_best = new_states[i].state_graph
+                    for n in range(graph_best.num_nodes):
+                        pn = new_states[i].state_room_positions[n]
+                        graph_best.get_node(n).set_pos(pn)
+
+                    layout_best = self.get_layout(graph_best, new_states[i].state_room_positions)
+                    #ofstream fout
+    #ifdef DUMP_PARTIAL_SOLUTION
+                    #graph_best.SaveGraphAsXML(CLevelConfig.AddOutputPrefix(sprint(f'partial_%03d.xml', num_partials)).c_str())
+                    #open_doors(layout_best, &graph_best, True)
+                    #layout_best.SaveLayoutAsSVG(CLevelConfig.AddOutputPrefix(sprint(f'partial_%03d.svg', num_partials)).c_str(), 800, 800, True, &graph_best)
+    #endif
+                    #self.best_sol_count ++
+                    num_partials += 1
+                    state_stack.insert(0, new_states[i])
+
+        self.layout = layout_best
+        self.layout.move_to_scene_centre()
+
+    #ifndef PERFORMANCE_TEST
+        print(f'Total # of backtracks: {self.backtrack_count}')
+    #endif
     #
-    #         for i in range(len(tmp_indices)):
-    #             indices.append(tmp_indices[i])
-    # #endif
-    #         self.set_visited_neighbours(indices)
-    #         for i in range(len(self.graph.num_nodes)):
-    #             self.graph.get_node(i).set_flag_visited(False)
-    #
-    #         for i in range(len(indices)):
-    #             index = indices[i]
-    #             self.graph.get_node(indices[i]).set_flag_visited(True)
-    #
-    #         old_state.state_graph = self.graph
-    #         new_states = []
-    #         self.chain_count += 1
-    #         flag = self.solve_1d_chain(indices, tmp_indices, old_state, new_states)
-    #         if not new_states:
-    # #ifndef PERFORMANCE_TEST
-    #             print(f'Backtracked from level {self.backtrack_level} to level {self.backtrack_level - 1}!')
-    # #endif
-    #             self.backtrack_count += 1
-    #             self.backtrack_level -= 1
-    #         else:
-    #             self.backtrack_level += 1
-    #
-    #         if self.graph.VisitedAllNodes():
-    #             for i in range(len(new_states)):
-    #                 if self.solution_count >= target_num_solutions:
-    #                     break
-    #
-    #                 self.set_current_state(new_states[i])
-    #                 if new_states[i].state_energy < energy_min:
-    #                     energy_min = new_states[i].state_energy
-    #                     layout_best = self.layout
-    #
-    #                 #float collide
-    #                 #float connectivity
-    #                 energy = self.get_layout_energy(self.layout, self.graph, collide, connectivity)
-    #
-    #                 #float CLevelSynth.get_layout_energy(CRoomLayout& layout, graph, collide_area, connectivity)
-    #
-    #                 flag_valid = self.layout_collide(self.layout) <= self.numerical_tolerance and self.check_room_connectivity(self.layout, self.graph) <= self.numerical_tolerance
-    #                 if not flag_valid:
-    #                     # Skip invalid solution...
-    #                     continue
-    #
-    #                 #DumpSolutionIntoXML()
-    #                 self.solution_count += 1
-    #
-    #         else:
-    #             for (i = int(new_states.size()) - 1; i >= 0; i--):
-    #                 new_states[i].my_indices = indices
-    #                 #new_states[i].state_graph = *self.graph
-    #                 graphBest = new_states[i].state_graph
-    #                 for (n = 0; n < graphBest.num_nodes; n++):
-    #                     pn = new_states[i].state_room_positions[n]
-    #                     graphBest.get_node(n).set_pos(pn)
-    #
-    #
-    #                 layout_best = get_layout(&graphBest, new_states[i].state_room_positions)
-    #                 #ofstream fout
-    # #ifdef DUMP_PARTIAL_SOLUTION
-    #                 graphBest.SaveGraphAsXML(CLevelConfig.AddOutputPrefix(sprint(f'partial_%03d.xml', num_partials)).c_str())
-    #                 open_doors(layout_best, &graphBest, True)
-    #                 layout_best.SaveLayoutAsSVG(CLevelConfig.AddOutputPrefix(sprint(f'partial_%03d.svg', num_partials)).c_str(), 800, 800, True, &graphBest)
-    # #endif
-    #                 #self.best_sol_count ++
-    #                 num_partials += 1
-    #                 state_stack.insert(0, new_states[i])
-    #
-    #     self.layout = layout_best
-    #     self.layout.move_to_scene_centre()
-    #
-    # #ifndef PERFORMANCE_TEST
-    #     print(f'Total # of backtracks: {self.backtrack_count})'
-    # #endif
-    #
-    # def solve_1d_chain(self, indices, weighted_indices, old_state, new_states):
-    #     if FLAG_USE_ILS:
-    #         return self.solve_1d_chainILS(indices, old_state, new_states)
+    def solve_1d_chain(self, indices, weighted_indices, old_state, new_states):
+        if LevelConfig().FLAG_USE_ILS:
+            return self.solve_1d_chainILS(indices, old_state, new_states)
     #
     #     graph = old_state.state_graph
     #     self.set_sequence_as_1d_chain(indices, graph)
@@ -644,7 +648,7 @@ class LevelSynth:
     #     delta_e_avg = 0.0
     #     # Current best result so far
     #     layout_best = get_layout(graph, old_state.state_room_positions)
-    #     graphBest = *graph
+    #     graph_best = *graph
     #
     #     if not FLAG_RANDOM_WALK:
     # #if 0
@@ -844,16 +848,16 @@ class LevelSynth:
     # #endif
     # #ifdef DUMP_INTERMEDIATE_OUTPUT
     #                     layout_best = layout_tmp
-    #                     graphBest = graph_tmp
-    #                     for (n = 0; n < graphBest.num_nodes; n++):
+    #                     graph_best = graph_tmp
+    #                     for (n = 0; n < graph_best.num_nodes; n++):
     #                         pn = layout_best.get_room_positions()[n]
-    #                         graphBest.get_node(n).set_pos(pn)
+    #                         graph_best.get_node(n).set_pos(pn)
     #
     #                     #std.ofstream fout
     #                     ##fout.open(CLevelConfig.AddOutputPrefix('log.txt').c_str(), std.ios_base.app)
     #                     #fout << self.best_sol_count}\t{energy_min << std.endl
-    #                     graphBest.SaveGraphAsXML(CLevelConfig.AddOutputPrefix(sprint(f'tmpBest_%03d.xml', self.best_sol_count)).c_str())
-    #                     open_doors(layout_best, &graphBest, True)
+    #                     graph_best.SaveGraphAsXML(CLevelConfig.AddOutputPrefix(sprint(f'tmpBest_%03d.xml', self.best_sol_count)).c_str())
+    #                     open_doors(layout_best, &graph_best, True)
     #                     layout_best.SaveLayoutAsSVG(CLevelConfig.AddOutputPrefix(sprint(f'tmpBest_%03d.svg', self.best_sol_count)).c_str())
     #                     self.best_sol_count += 1
     # #endif
@@ -898,18 +902,18 @@ class LevelSynth:
     #     if not new_states:
     # #ifdef DUMP_INTERMEDIATE_OUTPUT
     #         print(f'Empty solution set!')
-    #         graphBest.SaveGraphAsXML(CLevelConfig.AddOutputPrefix(sprint(f'backTracking_level%02d_%03d.xml', self.backtrack_level, self.backtrack_count)).c_str())
-    #         for (n = 0; n < graphBest.num_nodes; n++):
-    #             graphBest.get_node(n).set_flag_visited(False)
+    #         graph_best.SaveGraphAsXML(CLevelConfig.AddOutputPrefix(sprint(f'backTracking_level%02d_%03d.xml', self.backtrack_level, self.backtrack_count)).c_str())
+    #         for (n = 0; n < graph_best.num_nodes; n++):
+    #             graph_best.get_node(n).set_flag_visited(False)
     #
     #         for (n = 0; n < int(indices.size()); n++):
-    #             graphBest.get_node(indices[n]).set_flag_visited(True)
+    #             graph_best.get_node(indices[n]).set_flag_visited(True)
     #
     #         for (n = 0; n < int(weighted_indices.size()); n++):
-    #             graphBest.get_node((*weighted_indices)[n]).set_flag_visited(False)
+    #             graph_best.get_node((*weighted_indices)[n]).set_flag_visited(False)
     #
     #         layout_best.SaveLayoutAsSVG(CLevelConfig.AddOutputPrefix(sprint(f'backTracking_level%02d_%03d.svg', self.backtrack_level, self.backtrack_count)).c_str())
-    #         layout_best.SaveLayoutAsSVG(CLevelConfig.AddOutputPrefix(sprint(f'backTrackingPartial_level%02d_%03d.svg', self.backtrack_level, self.backtrack_count)).c_str(), 400, 400, True, &graphBest)
+    #         layout_best.SaveLayoutAsSVG(CLevelConfig.AddOutputPrefix(sprint(f'backTrackingPartial_level%02d_%03d.svg', self.backtrack_level, self.backtrack_count)).c_str(), 400, 400, True, &graph_best)
     # #endif
     #         return False
     #
@@ -926,121 +930,120 @@ class LevelSynth:
     #
     #     return True
     #
-    # def solve_1d_chainILS(self, indices, old_state, new_states):
-    #     graph = old_state.state_graph
-    #     self.set_sequence_as_1d_chain(indices, graph)
-    #     new_states.clear()
-    #     if graph.get_node(indices[0]).get_flag_fixed:
-    #         old_state.insert_to_new_states(new_states, graph)
-    #         return True
-    #
-    #     # Borrow the parameters from simulated annealing...
-    #     n = SA_NUM_CYCLES
-    #     m = SA_NUM_TRIALS
-    #     # CRoomLayout layout_best; # Current best result so far
-    #     collide_area = 0
-    #     connectivity = 00
-    #     energy_min = 1e10
-    #     energy_history = 1e10
-    #     pick_index_count = 0
-    #     for i in range(n):
-    #         layout_history = self.layout
-    #         graph_history = graph
-    #         if i != 0:
-    #             # Introduce perturbation...
-    #             self.randomly_adjust_one_room(self.layout, graph, indices, None)
-    #
-    #         energy_tmp = self.get_layout_energy(self.layout, graph, collide_area, connectivity)
-    #         energy_current = energy_tmp
-    #         if i == 0:
-    #             energy_min = energy_current
-    #             print(f'Initial energy: {energy_current}')
-    #
-    #         for j in range(m):
-    #             graph_tmp = graph
-    #             layout_tmp = self.layout
-    #             self.randomly_adjust_one_room(layout_tmp, graph_tmp, indices, None)
-    # #if 1 # New on 08/16/2013
-    #             if self.flag_visited_node:
-    #                 p_min = Vector2(1e10, 1e10)
-    #                 p_max = Vector2(-1e10, -1e10)
-    #                 for d in range(len(indices)):
-    #                     idx = indices[d]
-    #                     pj = layout_tmp.get_room(idx).get_room_centre()
-    #                     for k in range(2):
-    #                         p_min[k] = min(p_min[k], pj[k])
-    #                         p_max[k] = max(p_max[k], pj[k])
-    #                 pos_cen = (p_min + p_max) * 0.5
-    #                 for d in range(len(indices)):
-    #                     idx = indices[d]
-    #                     layout_tmp.get_room(idx).translate_room(-pos_cen)
-    # #endif
-    #             energy_tmp = self.get_layout_energy(layout_tmp, graph_tmp, collide_area, connectivity)
-    #             if collide_area <= self.numerical_tolerance and connectivity <= self.numerical_tolerance:
-    #                 new_state = old_state
-    #                 new_state.state_graph = graph
-    #                 new_state.state_room_positions = layout_tmp.get_room_positions()
-    #                 new_state.state_energy = energy_tmp
-    #                 new_state.move_rooms_to_scene_centre(graph)
-    #                 new_state.insert_to_new_states(new_states, graph)
-    #
-    #             if energy_tmp < energy_current:
-    #                 if energy_tmp < energy_min:
-    #                     # layout_best = layout_tmp
-    #                     energy_min = energy_tmp
-    # #ifndef PERFORMANCE_TEST
-    #                     print(f'A minimum energy: {energy_min}')
-    # #endif
-    #                 self.layout = layout_tmp
-    #                 graph = graph_tmp
-    #                 energy_current = energy_tmp
-    #
-    #             pick_index_count += 1
-    #             pick_index_count = pick_index_count % len(indices)
-    #
-    #         if i == 0 or energy_min < energy_history:
-    #             energy_history = energy_min
-    #         else:
-    #             self.layout = layout_history
-    #             graph = graph_history
-    #
-    #     print(f'Final energy: {energy_min}')
-    #     if not new_states:
-    #         print(f'Empty solution set!')
-    #         return False
-    #
-    #     print(f'Number of valid states: {len(new_states)}')
-    #     sort(new_states.begin(), new_states.end(), CompareStateEnergySmallerFirst)
-    #     num_solutions_to_track = min(len(new_states), NUM_SOLUTIONS_TO_TRACK)
-    #     newer_states = []
-    #     for i in range(num_solutions_to_track):
-    #         newer_states.append(new_states[i])
-    #     new_states[:] = newer_states
-    #
-    #     return True
-    #
-    # def set_current_state(self, s):
-    #     self.graph = s.state_graph
-    #     self.room_positions = s.state_room_positions
-    #     self.layout = get_layout(self.graph, room_positions)
-    #
-    # def set_sequence_as_1d_chain(self, indices, graph):
-    #     self.sequence.clear()
-    #     for i in range(len(indices)):
-    #         idx = graph.get_node(indices[i]).get_type()
-    #         idx = idx % self.templates.nuself.templates
-    #         self.sequence.append(idx)
-    #
-    # def set_visited_neighbours(self, indices):
-    #     self.visited_neighbours.clear()
-    #     self.visited_neighbours.resize(indices.size())
-    #     for (i = 0; i < int(self.visited_neighbours.size()); i++):
-    #         node_idx = indices[i]
-    #         std.vector<int>neighbors = self.graph.get_node(node_idx).GetNeighbors()
-    #         for (j = 0; j < int(neighbors.size()); j++):
-    #             neighborIdx = neighbors[j]
-    #             if self.graph.get_node(neighborIdx).flag_visited == True:
-    #                 self.visited_neighbours[i].push_back(neighborIdx)
+    def solve_1d_chainILS(self, indices, old_state, new_states):
+        graph = old_state.state_graph
+        self.set_sequence_as_1d_chain(indices, graph)
+        new_states.clear()
+        if graph.get_node(indices[0]).get_flag_fixed:
+            old_state.insert_to_new_states(new_states, graph)
+            return True
+
+        # Borrow the parameters from simulated annealing...
+        n = LevelConfig().SA_NUM_OF_CYCLES
+        m = LevelConfig().SA_NUM_OF_TRIALS
+        # CRoomLayout layout_best; # Current best result so far
+        collide_area = 0
+        connectivity = 00
+        energy_min = 1e10
+        energy_history = 1e10
+        pick_index_count = 0
+        for i in range(n):
+            layout_history = self.layout
+            graph_history = graph
+            if i != 0:
+                # Introduce perturbation...
+                self.randomly_adjust_one_room(self.layout, graph, indices, None)
+
+            energy_tmp = self.get_layout_energy(self.layout, graph, collide_area, connectivity)
+            energy_current = energy_tmp
+            if i == 0:
+                energy_min = energy_current
+                print(f'Initial energy: {energy_current}')
+
+            for j in range(m):
+                graph_tmp = graph
+                layout_tmp = self.layout
+                self.randomly_adjust_one_room(layout_tmp, graph_tmp, indices, None)
+    #if 1 # New on 08/16/2013
+                if self.flag_visited_node:
+                    p_min = Vector2(1e10, 1e10)
+                    p_max = Vector2(-1e10, -1e10)
+                    for d in range(len(indices)):
+                        idx = indices[d]
+                        pj = layout_tmp.get_room(idx).get_room_centre()
+                        for k in range(2):
+                            p_min[k] = min(p_min[k], pj[k])
+                            p_max[k] = max(p_max[k], pj[k])
+                    pos_cen = (p_min + p_max) * 0.5
+                    for d in range(len(indices)):
+                        idx = indices[d]
+                        layout_tmp.get_room(idx).translate_room(-pos_cen)
+    #endif
+                energy_tmp = self.get_layout_energy(layout_tmp, graph_tmp, collide_area, connectivity)
+                if collide_area <= self.numerical_tolerance and connectivity <= self.numerical_tolerance:
+                    new_state = old_state
+                    new_state.state_graph = graph
+                    new_state.state_room_positions = layout_tmp.get_room_positions()
+                    new_state.state_energy = energy_tmp
+                    new_state.move_rooms_to_scene_centre(graph)
+                    new_state.insert_to_new_states(new_states, graph)
+
+                if energy_tmp < energy_current:
+                    if energy_tmp < energy_min:
+                        # layout_best = layout_tmp
+                        energy_min = energy_tmp
+    #ifndef PERFORMANCE_TEST
+                        print(f'A minimum energy: {energy_min}')
+    #endif
+                    self.layout = layout_tmp
+                    graph = graph_tmp
+                    energy_current = energy_tmp
+
+                pick_index_count += 1
+                pick_index_count = pick_index_count % len(indices)
+
+            if i == 0 or energy_min < energy_history:
+                energy_history = energy_min
+            else:
+                self.layout = layout_history
+                graph = graph_history
+
+        print(f'Final energy: {energy_min}')
+        if not new_states:
+            print(f'Empty solution set!')
+            return False
+
+        print(f'Number of valid states: {len(new_states)}')
+        sort(new_states.begin(), new_states.end(), CompareStateEnergySmallerFirst)
+        num_solutions_to_track = min(len(new_states), NUM_SOLUTIONS_TO_TRACK)
+        newer_states = []
+        for i in range(num_solutions_to_track):
+            newer_states.append(new_states[i])
+        new_states[:] = newer_states
+
+        return True
+
+    def set_current_state(self, s):
+        self.graph = s.state_graph
+        self.room_positions = s.state_room_positions
+        self.layout = self.get_layout(self.graph, self.room_positions)
+
+    def set_sequence_as_1d_chain(self, indices, graph):
+        self.sequence.clear()
+        for i in range(len(indices)):
+            idx = graph.get_node(indices[i]).get_type()
+            idx = idx % self.templates.num_templates
+            self.sequence.append(idx)
+
+    def set_visited_neighbours(self, indices):
+        self.visited_neighbours.clear()
+        for i in range(len(self.visited_neighbours)):
+            node_idx = indices[i]
+            neighbors = self.graph.get_node(node_idx).get_neighbours()
+            for j in range(len(neighbors)):
+                neighbour_idx = neighbors[j]
+                if self.graph.get_node(neighbour_idx).flag_visited:
+                    self.visited_neighbours[i].append(neighbour_idx)
     #
     # def DumpSolutionIntoXML(self):
     #     graphSol = *self.graph

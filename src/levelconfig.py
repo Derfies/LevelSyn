@@ -8,7 +8,6 @@ class LevelConfig:
     def __new__(cls, *args, **kwargs):
         if not cls._instance:
             cls._instance = super().__new__(cls, *args, **kwargs)
-        print('returning', cls._instance)
         return cls._instance
     
     def __init__(self):
