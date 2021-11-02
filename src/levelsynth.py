@@ -8,6 +8,7 @@ from configspace import ConfigSpace
 from levelconfig import LevelConfig
 from roomlayout import RoomLayout
 from reactor.geometry.vector import Vector2
+from levelmath import NUMERICAL_TOLERANCE
 
 
 @dataclass
@@ -21,7 +22,7 @@ def random2(max_):
     if max_ < 1:
         return 0
     else:
-        return random.randint(0, max_ + 1)
+        return random.randint(0, max_ - 1)
 
 
 class CurrentState:
@@ -64,7 +65,7 @@ class CurrentState:
 
     def get_state_difference(self, other_state, graph):
         state_diff = 0
-        for j in range(len(graph.num_nodes)):
+        for j in range(graph.num_nodes):
             if not graph.get_node(j).flag_visited:
                 continue
             p1 = self.state_room_positions[j]
@@ -73,7 +74,7 @@ class CurrentState:
         return state_diff
 
     def insert_to_new_states(self, new_states, graph):
-        state_diff_thresh = STATE_DIFF_THRESH
+        state_diff_thresh = LevelConfig().STATE_DIFFERENCE_THRESHOLD
         if state_diff_thresh <= 0:
             new_states.append(self)
             return True
@@ -532,7 +533,7 @@ class LevelSynth:
         while self.solution_count < target_num_solutions and state_stack:
             old_state = state_stack.pop(0)
             self.set_current_state(old_state)
-            self.flag_visited_node = self.graph.visited_no_node()
+            self.flag_visited_no_node = self.graph.visited_no_node()
             flag_cyclic = False
             tmp_indices = self.graph.extract_deepest_face_or_chain(flag_cyclic, LevelConfig().FLAG_SMALL_FACE_FIRST)
             indices = []
@@ -584,11 +585,11 @@ class LevelSynth:
 
                     #float collide
                     #float connectivity
-                    energy = self.get_layout_energy(self.layout, self.graph, collide, connectivity)
+                    energy, collide_area, connectivity = self.get_layout_energy(self.layout, self.graph)
 
                     #float CLevelSynth.get_layout_energy(CRoomLayout& layout, graph, collide_area, connectivity)
 
-                    flag_valid = self.layout_collide(self.layout) <= self.numerical_tolerance and self.check_room_connectivity(self.layout, self.graph) <= self.numerical_tolerance
+                    flag_valid = self.layout_collide(self.layout) <= NUMERICAL_TOLERANCE and self.check_room_connectivity(self.layout, self.graph) <= NUMERICAL_TOLERANCE
                     if not flag_valid:
                         # Skip invalid solution...
                         continue
@@ -624,7 +625,6 @@ class LevelSynth:
     #endif
     #
     def solve_1d_chain(self, indices, weighted_indices, old_state, new_states):
-        print(LevelConfig().FLAG_USE_ILS)
         if LevelConfig().FLAG_USE_ILS:
             return self.solve_1d_chainILS(indices, old_state, new_states)
     #
@@ -811,7 +811,7 @@ class LevelSynth:
     #             layout_tmp = self.layout
     #             adjusted_index = randomly_adjust_one_room(layout_tmp, &graph_tmp, indices, weighted_indices)
     # #if 0 # New on 08/16/2013
-    #             if self.flag_visited_node:
+    #             if self.flag_visited_no_node:
     #                 p_min = Vector2(1e10, 1e10)
     #                 p_max = Vector2(-1e10, -1e10)
     #                 for d in range(len(indices)):
@@ -953,8 +953,8 @@ class LevelSynth:
         n = LevelConfig().SA_NUM_OF_CYCLES
         m = LevelConfig().SA_NUM_OF_TRIALS
         # CRoomLayout layout_best; # Current best result so far
-        collide_area = 0
-        connectivity = 00
+        #collide_area = 0
+        #connectivity = 00
         energy_min = 1e10
         energy_history = 1e10
         pick_index_count = 0
@@ -965,7 +965,7 @@ class LevelSynth:
                 # Introduce perturbation...
                 self.randomly_adjust_one_room(self.layout, graph, indices, None)
 
-            energy_tmp = self.get_layout_energy(self.layout, graph, collide_area, connectivity)
+            energy_tmp, collide_area, connectivity = self.get_layout_energy(self.layout, graph)
             energy_current = energy_tmp
             if i == 0:
                 energy_min = energy_current
@@ -976,7 +976,7 @@ class LevelSynth:
                 layout_tmp = self.layout
                 self.randomly_adjust_one_room(layout_tmp, graph_tmp, indices, None)
     #if 1 # New on 08/16/2013
-                if self.flag_visited_node:
+                if self.flag_visited_no_node:
                     p_min = Vector2(1e10, 1e10)
                     p_max = Vector2(-1e10, -1e10)
                     for d in range(len(indices)):
@@ -990,8 +990,9 @@ class LevelSynth:
                         idx = indices[d]
                         layout_tmp.rooms[idx].translate_room(-pos_cen)
     #endif
-                energy_tmp = self.get_layout_energy(layout_tmp, graph_tmp, collide_area, connectivity)
-                if collide_area <= self.numerical_tolerance and connectivity <= self.numerical_tolerance:
+                energy_tmp, collide_area, connectivity = self.get_layout_energy(layout_tmp, graph_tmp)
+                print(f'energy_tmp: {energy_tmp}', collide_area, connectivity)
+                if collide_area <= NUMERICAL_TOLERANCE and connectivity <= NUMERICAL_TOLERANCE:
                     new_state = old_state
                     new_state.state_graph = graph
                     new_state.state_room_positions = layout_tmp.get_room_positions()
@@ -1026,7 +1027,7 @@ class LevelSynth:
 
         print(f'Number of valid states: {len(new_states)}')
         sort(new_states.begin(), new_states.end(), CompareStateEnergySmallerFirst)
-        num_solutions_to_track = min(len(new_states), NUM_SOLUTIONS_TO_TRACK)
+        num_solutions_to_track = min(len(new_states), LevelConfig().NUM_SOLUTIONS_TO_TRACK)
         newer_states = []
         for i in range(num_solutions_to_track):
             newer_states.append(new_states[i])
@@ -1070,88 +1071,95 @@ class LevelSynth:
     # def randomly_pick_one_room(self, layout):
     #     picked_room_index = random.randint(0, layout.num_rooms - 1)
     #     return picked_room_index
-    #
-    # def randomly_pick_one_room(self, layout, indices, weighted_indices):
-    #     if weighted_indices:
-    #         std.vector<int> tmp_indices = *weighted_indices
-    #         chainLength = int(tmp_indices.size())
-    #         for (i = 0; i < indices.size(); i++):
-    #             energy_tmp = layout.get_room(indices[i]).GetEnergy()
-    #             if energy_tmp > 1.1:
-    #                 tmp_indices.push_back(indices[i])
-    #
-    #         picked_room_index = int(rand() / float(RAND_MAX) * chainLength)
-    #         picked_room_index = picked_room_index % chainLength
-    #         picked_room_index = (tmp_indices)[picked_room_index]
-    #         return picked_room_index
-    #
-    #     else:
-    #         chainLength = int(indices.size())
-    #         picked_room_index = int(rand() / float(RAND_MAX) * chainLength)
-    #         picked_room_index = picked_room_index % chainLength
-    #         picked_room_index = indices[picked_room_index]
-    #         return picked_room_index
-    #
-    # def randomly_pick_another_room(self, layout, picked_index):
-    #     num_rooms = layout.Getnum_rooms()
-    #     other_room_index = picked_index
-    #     while other_room_index == picked_index:
-    #         other_room_index = int(rand() / float(RAND_MAX) * num_rooms)
-    #         other_room_index = other_room_index % num_rooms
-    #     return other_room_index
-    #
-    # def get_connected_indices(self, graph, picked_index, flag_visited_only=True):
-    #     indices = []
-    #     for i in range(len(graph.edges)):
-    #         edge = graph.get_edge(i)
-    #         idx0 = edge.idx0
-    #         idx1 = edge.idx1
-    #         if idx0 != picked_index and idx1 != picked_index:
-    #             continue
-    #
-    #         idx = idx1 if idx0 == picked_index else idx0
-    #         if not graph.get_node(idx).flag_visited and flag_visited_only:
-    #             continue
-    #
-    #         indices.append(idx)
-    #
-    #     return indices
-    #
-    # def randomly_adjust_one_room(self, layout, graph, indices, weighted_indices):
-    #     num_rooms = layout.num_rooms
-    #     if num_rooms <= 1:
-    #         return -1
-    #
-    #     r = random.random()
-    #
-    # #if 0 # Before 07/16/2013
-    #     if  r < 0.25:
-    #         randomly_adjust_one_room01(layout, graph, indices)
-    #
-    #     elif  r < 0.5:
-    #         randomly_adjust_one_room02(layout, graph, indices)
-    #
-    #     elif  r < 0.75 or not FLAG_ENABLE_TYPE_CHANGE:
-    # #else:
-    #     if r < 0.75 or not FLAG_ENABLE_TYPE_CHANGE: # nv: was 0.9
-    # #endif
-    #         if not FLAG_RANDOM_WALK:
-    #             return self.randomly_adjust_one_room03(layout, graph, indices, weighted_indices)
-    #         else:
-    #             return GradientDescentOneRoom(layout, graph, *weighted_indices)
-    #     else:
-    #         return randomly_adjust_one_room04(layout, graph, indices, weighted_indices)
-    #
+
+    def randomly_pick_one_room(self, layout, indices=None, weighted_indices=None):
+        if weighted_indices is not None:
+            tmp_indices = weighted_indices
+            chain_length = len(tmp_indices)
+            #for (i = 0; i < indices.size(); i++):
+            for i in range(len(indices)):
+                energy_tmp = layout.get_room(indices[i]).energy
+                if energy_tmp > 1.1:
+                    tmp_indices.append(indices[i])
+
+            #picked_room_index = int(rand() / float(RAND_MAX) * chainLength)
+            #picked_room_index = picked_room_index % chainLength
+            picked_room_index = random.randint(0, chain_length - 1)
+            picked_room_index = tmp_indices[picked_room_index]
+            return picked_room_index
+
+        elif indices is not None:
+            chain_length = len(indices)
+            #picked_room_index = int(rand() / float(RAND_MAX) * chainLength)
+            #picked_room_index = picked_room_index % chainLength
+            picked_room_index = random.randint(0, chain_length - 1)
+            picked_room_index = indices[picked_room_index]
+            return picked_room_index
+        else:
+            picked_room_index = random.randint(0, layout.num_rooms - 1)
+            return picked_room_index
+
+    def randomly_pick_another_room(self, layout, picked_index):
+        num_rooms = layout.num_rooms
+        other_room_index = picked_index
+        while other_room_index == picked_index:
+            other_room_index = random.randint(0, num_rooms - 1)
+            #other_room_index = int(rand() / float(RAND_MAX) * num_rooms)
+            #other_room_index = other_room_index % num_rooms
+        return other_room_index
+
+    def get_connected_indices(self, graph, picked_index, flag_visited_only=True):
+        indices = []
+        for i in range(len(graph.edges)):
+            edge = graph.get_edge(i)
+            idx0 = edge.idx0
+            idx1 = edge.idx1
+            if idx0 != picked_index and idx1 != picked_index:
+                continue
+
+            idx = idx1 if idx0 == picked_index else idx0
+            if not graph.get_node(idx).flag_visited and flag_visited_only:
+                continue
+
+            indices.append(idx)
+
+        return indices
+
+    def randomly_adjust_one_room(self, layout, graph, indices, weighted_indices):
+        num_rooms = layout.num_rooms
+        if num_rooms <= 1:
+            return -1
+
+        r = random.random()
+
+#if 0 # Before 07/16/2013
+        # if  r < 0.25:
+        #     randomly_adjust_one_room01(layout, graph, indices)
+        # 
+        # elif  r < 0.5:
+        #     randomly_adjust_one_room02(layout, graph, indices)
+        # 
+        # elif  r < 0.75 or not FLAG_ENABLE_TYPE_CHANGE:
+#else:
+        if r < 0.75 or not LevelConfig().FLAG_ENABLE_TYPE_CHANGE: # nv: was 0.9
+ #endif
+            if not LevelConfig().FLAG_RANDOM_WALK:
+                return self.randomly_adjust_one_room03(layout, graph, indices, weighted_indices)
+            else:
+                return self.gradient_descent_one_room(layout, graph, *weighted_indices)
+        else:
+            return self.randomly_adjust_one_room04(layout, graph, indices, weighted_indices)
+
     # def randomly_adjust_one_room01(self, layout, graph, indices):
-    #     picked_room_index = randomly_pick_one_room(layout, indices, NULL)
+    #     picked_room_index = self.randomly_pick_one_room(layout, indices, None)
     #     picked_room = layout.get_room(picked_room_index)
     #
-    #     for (i = 0; i < picked_room.GetNumOfEdges(); i++):
+    #     for i in range(picked_room.num_edges):
     #         edge = picked_room.get_edge(i)
     #         pr2 = edge.GetPos2() - edge.GetPos1()
-    #         pr = v3f(pr2[0], pr2[1], 0.f)
-    #         norm = v2f(pr[1], -pr[0])
-    #         norm = normalize(norm)
+    #         pr = Vector3(pr2[0], pr2[1], 0.0)
+    #         norm = Vector2(pr[1], -pr[0])
+    #         norm.normalize()
     #         distMin = 1e10
     #         CRoomEdge edgeNearest
     #         for (j = 0; j < layout.Getnum_rooms(); j++):
@@ -1179,7 +1187,7 @@ class LevelSynth:
     #             d = dot(norm, pr)
     #             dp = d * norm
     #             picked_room.translate_room(dp)
-    #
+
     # def randomly_adjust_one_room02(self, layout, graph, indices):
     #     picked_room_index = randomly_pick_one_room(layout, indices, NULL)
     #     picked_room = layout.get_room(picked_room_index)
@@ -1218,7 +1226,7 @@ class LevelSynth:
     #         dp = d * norm
     #         picked_room.translate_room(dp)
     #
-    # def GradientDescentOneRoom(self, layout, graph, indices):
+    # def gradient_descent_one_room(self, layout, graph, indices):
     #     collide_area = 0.f
     #     connectivity = 0.f
     #     myEnergy = get_layout_energy(layout, graph, collide_area, connectivity)
@@ -1285,77 +1293,78 @@ class LevelSynth:
     #     picked_room.translate_room(dp)
     #     return picked_room_index
     #
-    # def randomly_adjust_one_room03(self, layout, graph, indices, weighted_indices):
-    #     picked_room_index = randomly_pick_one_room(layout, indices, weighted_indices)
-    #     picked_room = layout.get_room(picked_room_index)
-    #     sample_config_space_for_picked_room(layout, graph, indices, picked_room_index)
-    #     return picked_room_index
-    #
-    # def sample_config_space_for_picked_room(self, layout, graph, indices, picked_room_index):
-    #     picked_room = layout.get_room(picked_room_index)
-    #     config_space = ConfigSpace()
-    #     connected_indices = get_connected_indices(graph, picked_room_index)
-    #     if len(connected_indices) >= 1:
-    #         random_shuffle(connected_indices.begin(), connected_indices.end())
-    #         idx0 = connected_indices[0]
-    #         config_space0 = ConfigSpace(layout.get_room(idx0), picked_room)
-    #         config_space = config_space0
-    #         for i in range(len(connected_indices)):
-    #             config_space_tmp = ConfigSpace(layout.get_room(connected_indices[i]), picked_room)
-    #             config_space_new = ConfigSpace.find_intersection(config_space, config_space_tmp)
-    #             if config_space_new.is_empty:
-    #                 break
-    #             else:
-    #                 config_space = config_space_new
-    #
-    #     while_cnt = 0
-    #     while not config_space:
-    #         other_room_index = randomly_pick_another_room(layout, picked_room_index)
-    #         other_room = layout.get_room(other_room_index)
-    #         config_space = ConfigSpace(other_room, picked_room)
-    #         while_cnt += 1
-    #         if while_cnt >= 1000:
-    #             print(f'Break from the while loop after reaching enough number of trials!')
-    #             return
-    #
-    #     pos = config_space.randomly_sample_config_space()
-    #     dp = pos - picked_room.get_room_centre()
-    #     picked_room.translate_room(dp)
-    #
-    # def randomly_adjust_one_room04(self, layout, graph, indices, weighted_indices):
-    #     num_templates = self.templates.num_templates
-    #     if num_templates <= 1:
-    #         return -1
-    #
-    #     picked_room_index = randomly_pick_one_room(layout, indices, weighted_indices)
-    #     picked_room = layout.get_room(picked_room_index)
-    #
-    #     typeOld = graph.get_node(picked_room_index).type
-    #     typeNew = typeOld
-    #     boundaryOld = graph.get_node(picked_room_index).GetBoundaryType()
-    #     boundaryNew = -1
-    #     while_cnt = 0
-    #     while (typeNew == typeOld or boundaryNew != boundaryOld or self.templates.get_room(typeNew).GetBoundaryType() == 1)
-    #         typeNew = int(rand() / float(RAND_MAX) * num_templates)
-    #         typeNew = typeNew % num_templates
-    #         boundaryNew = self.templates.get_room(typeNew).GetBoundaryType()
-    #         while_cnt++
-    #         if while_cnt >= 1000:
-    #             print(f'Break from the while loop after reaching enough number of trials in randomly_adjust_one_room04()!')
-    #             return -1
-    #
-    #     graph.get_node(picked_room_index).SetType(typeNew)
-    #     room = self.templates.get_room(typeNew)
-    #     p1 = room.get_room_centre()
-    #     p2 = picked_room.get_room_centre()
-    #     dp = p2 - p1
-    #     room.translate_room(dp)
-    #     picked_room = room
-    # #if 1 # New on 09/15/2013
-    #     #sample_config_space_for_picked_room(layout, graph, indices, picked_room_index)
-    # #endif
-    #     return picked_room_index
-    #
+    def randomly_adjust_one_room03(self, layout, graph, indices, weighted_indices):
+        picked_room_index = self.randomly_pick_one_room(layout, indices, weighted_indices)
+        picked_room = layout.rooms[picked_room_index]
+        self.sample_config_space_for_picked_room(layout, graph, indices, picked_room_index)
+        return picked_room_index
+
+    def sample_config_space_for_picked_room(self, layout, graph, indices, picked_room_index):
+        picked_room = layout.rooms[picked_room_index]
+        config_space = ConfigSpace()
+        connected_indices = self.get_connected_indices(graph, picked_room_index)
+        if len(connected_indices) >= 1:
+            random_shuffle(connected_indices.begin(), connected_indices.end())
+            idx0 = connected_indices[0]
+            config_space0 = ConfigSpace(layout.get_room(idx0), picked_room)
+            config_space = config_space0
+            for i in range(len(connected_indices)):
+                config_space_tmp = ConfigSpace(layout.get_room(connected_indices[i]), picked_room)
+                config_space_new = ConfigSpace.find_intersection(config_space, config_space_tmp)
+                if config_space_new.is_empty:
+                    break
+                else:
+                    config_space = config_space_new
+
+        while_cnt = 0
+        while not config_space.config_lines:
+            other_room_index = self.randomly_pick_another_room(layout, picked_room_index)
+            other_room = layout.rooms[other_room_index]
+            config_space = ConfigSpace(other_room, picked_room)
+            while_cnt += 1
+            if while_cnt >= 1000:
+                print(f'Break from the while loop after reaching enough number of trials!')
+                return
+
+        pos = config_space.randomly_sample_config_space()
+        dp = pos - picked_room.get_room_centre()
+        picked_room.translate_room(dp)
+
+    def randomly_adjust_one_room04(self, layout, graph, indices, weighted_indices):
+        num_templates = self.templates.num_templates
+        if num_templates <= 1:
+            return -1
+
+        picked_room_index = self.randomly_pick_one_room(layout, indices, weighted_indices)
+        picked_room = layout.rooms[picked_room_index]
+
+        type_old = graph.get_node(picked_room_index).type
+        type_new = type_old
+        boundary_old = graph.get_node(picked_room_index).boundary_type
+        boundary_new = -1
+        while_cnt = 0
+        while (type_new == type_old or boundary_new != boundary_old or self.templates.rooms[type_new].boundary_type == 1):
+            #type_new = int(rand() / float(RAND_MAX) * num_templates)
+            #type_new = type_new % num_templates
+            type_new = random.randint(0, num_templates - 1)
+            boundary_new = self.templates.rooms[type_new].boundary_type
+            while_cnt += 1
+            if while_cnt >= 1000:
+                print(f'Break from the while loop after reaching enough number of trials in randomly_adjust_one_room04()!')
+                return -1
+
+        graph.get_node(picked_room_index).type = type_new
+        room = self.templates.rooms[type_new]
+        p1 = room.get_room_centre()
+        p2 = picked_room.get_room_centre()
+        dp = p2 - p1
+        room.translate_room(dp)
+        picked_room = room
+#if 1 # New on 09/15/2013
+        #sample_config_space_for_picked_room(layout, graph, indices, picked_room_index)
+#endif
+        return picked_room_index
+
     # def get_layout_energy_early_out(self, layout, graph, collide_area, connectivity, room_moved, energy_tmp, energy_current):
     #     layout.reset_room_energies()
     #     energy_tmp = 1.0
@@ -1382,7 +1391,7 @@ class LevelSynth:
     #
     #     return True
     #
-    def get_layout_energy(self, layout, graph, collide_area, connectivity, room_moved=-1, do_contact=False, indices=None):
+    def get_layout_energy(self, layout, graph, room_moved=-1, do_contact=False, indices=None):
         layout.reset_room_energies()
         layout_energy = 1.0
         if LevelConfig().SIGMA_COLLIDE > 0:
@@ -1400,8 +1409,8 @@ class LevelSynth:
             if contact_area < 0:
                 layout_energy *= math.exp(contact_area / LevelConfig().SIGMA_CONTACT)
 
-        return layout_energy
-    #
+        return layout_energy, collide_area, connectivity
+
     def check_room_connectivity(self, layout, graph, flag_visited_only=False, room_moved=-1):
         connectivity = 0.0
         if graph is None:
@@ -1440,7 +1449,7 @@ class LevelSynth:
             else:
                 connectivity += layout.cached_connectivities[(idx0, idx1)]
         return connectivity
-    #
+    
     def layout_collide(self, layout, graph, flag_visited_only=False, room_that_moved=-1):
         collide_area_total = 0
         collide_count = 0

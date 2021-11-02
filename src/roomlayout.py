@@ -82,11 +82,11 @@ class RoomLayout:
         for i in range(self.num_rooms):
             self.rooms[i].translate_room(-pos_cen)
 
-    # def GetRoomPositions(self):
-    #     std.vector<v2f> roomPositions(GetNumOfRooms())
-    #     for (i = 0; i < GetNumOfRooms(); i++)
-    #         roomPositions[i] = GetRoom(i).GetRoomCenter()
-    #     return roomPositions
+    def get_room_positions(self):
+        room_positions = []
+        for i in range(self.num_rooms):
+            room_positions.append(self.rooms[i].get_room_centre())
+        return room_positions
 
     def reset_room_energies(self):
         for room in self.rooms:

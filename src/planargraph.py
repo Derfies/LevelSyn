@@ -6,6 +6,7 @@ from reactor.geometry.vector import Vector2
 from reactor.faceanalysis import FaceAnalysis
 from graphface import GraphFace
 from graphnode import GraphNode
+from graphedge import GraphEdge
 
 
 class PlanarGraph(Graph):
@@ -15,6 +16,7 @@ class PlanarGraph(Graph):
 
         self.num_types = 1
         self.chains = []
+        self._edges = []
         self.faces = []
 
     @classmethod
@@ -36,7 +38,7 @@ class PlanarGraph(Graph):
         return len(self.faces)
 
     def get_node(self, idx):
-        return GraphNode(self, list(self)[idx])
+        return GraphNode(self, list(self.nodes)[idx])
 
     def get_node_pos(self, idx):
         return self.get_node(idx).pos
@@ -48,8 +50,11 @@ class PlanarGraph(Graph):
                 indices.append(i)
         return indices
 
+    def get_edge(self, idx):
+        return GraphEdge(self, list(self.edges)[idx])
+
     def get_face(self, idx):
-        return self.faces[idx]#GraphFace(self, self.faces[idx])
+        return self.faces[idx]
 
     def get_graph_bounding_box(self):
         pos_min, pos_max = Vector2(1e10, 1e10), Vector2(-1e10, -1e10)
@@ -78,7 +83,7 @@ class PlanarGraph(Graph):
 
     def random_init_types(self):
         for i in range(self.num_nodes):
-            type_idx = random.randint(0, self.num_types + 1)
+            type_idx = random.randint(0, self.num_types - 1)
             self.get_node(i).type = type_idx
 
     def visited_no_node(self):
