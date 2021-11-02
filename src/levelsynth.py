@@ -88,19 +88,19 @@ class LevelSynth:
         self.chain_count = 0
         self.backtrack_count = 0
         self.backtrack_level = 0
-    #
-    # def set_graph_and_templates(self, graph, templates):
-    #     self.solution_count = 0
-    #     self.best_sol_count = 0
-    #     graph.move_graph_to_scene_center()
-    #     graph.scale_graph_node_positions(GRAPH_SCALING)
-    #     self.set_graph(graph)
-    #     self.templates = templates
-    #     self.graph.num_types = self.templates.num_templates
-    #     self.graph.random_init_types()
-    #     self.init_scene()
-    #     self.synthesize_scene()
-    #
+
+    def set_graph_and_templates(self, graph, templates):
+        self.solution_count = 0
+        self.best_sol_count = 0
+        graph.move_graph_to_scene_center()
+        graph.scale_graph_node_positions(GRAPH_SCALING)
+        self.set_graph(graph)
+        self.templates = templates
+        self.graph.num_types = self.templates.num_templates
+        self.graph.random_init_types()
+        self.init_scene()
+        self.synthesize_scene()
+
     # def set_graph(self, graph):
     #     self.graph = graph
     #     #room_positions.resize(self.graph.num_nodes)
