@@ -56,7 +56,7 @@ def point_to_line_sq_distance(pt, *args):
 
 def room_perimeter(room1):
     contact_area = 0
-    for i in range(room1.num_of_edges):
+    for i in range(room1.num_edges):
         edge1 = room1.get_edge(i)
         contact_area += edge1.length
     return contact_area
@@ -64,9 +64,9 @@ def room_perimeter(room1):
 
 def room_contact(room1, room2):
     contact_area = 0
-    for i in range(room1.num_of_edges):
+    for i in range(room1.num_edges):
         edge1 = room1.get_edge(i)
-        for j in range(room2.num_of_edges):
+        for j in range(room2.num_edges):
             edge2 = room2.get_edge(j)
             if not edge1.door_flag or not edge2.door_flag:
                 continue
@@ -134,7 +134,7 @@ def room_distance(room1, room2):
     d = 1e10
     for i in range(room1.num_vertices):
         pt = room1.get_vertex(i)
-        for j in range(room2.num_of_edges):
+        for j in range(room2.num_edges):
             edge = room2.get_edge(j)
             d_tmp = point_to_segment_sq_distance(pt, edge)
             d = min(d, d_tmp)

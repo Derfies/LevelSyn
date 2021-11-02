@@ -4,7 +4,7 @@ import time
 
 from configspace import ConfigSpace
 from levelconfig import LevelConfig
-from levelsync import LevelSynth
+from levelsynth import LevelSynth
 from planargraph import PlanarGraph
 from roomtemplates import RoomTemplates
 
@@ -20,15 +20,15 @@ def main(argv):
         level_config.target_num_solutions = int(argv[4])
 
     planar_graph = PlanarGraph()
-    planar_graph.load_graph_from_xml(argv[1])
+    planar_graph.load(argv[1])
 
     room_templates = RoomTemplates()
-    room_templates.load_templates_from_xml(argv[2])
+    room_templates.load(argv[2])
 
-    if not level_config.flag_randomness:
+    if not level_config.FLAG_RANDOMNESS:
         random.seed(0)
 
-    if level_config.flag_enrich_templates:
+    if level_config.FLAG_ENRICH_TEMPLATES:
         room_templates.enrich_by_rotating_180_degrees()
 
     config_space = ConfigSpace()
@@ -39,7 +39,7 @@ def main(argv):
     level_synthesizer.set_graph_and_templates(planar_graph, room_templates)
     elapse_time = time.time() - old_time
 
-    print(f'Have found {level_synthesizer.get_solutions_count()} solution(s) within {elapse_time} seconds.'
+    print(f'Have found {level_synthesizer.get_solutions_count()} solution(s) within {elapse_time} seconds.')
 
     return 0
 

@@ -19,26 +19,26 @@ class Room:
         self.reset_door_flags()
 
     @property
-    def num_of_vertices(self):
+    def num_vertices(self):
         return len(self.vertices)
 
     @property
-    def num_of_edges(self):
+    def num_edges(self):
         return len(self.vertices)
 
     @property
-    def num_of_walls(self):
+    def num_walls(self):
         return len(self.walls)
 
     def __str__(self):
-        str_ = f'Room with {self.num_of_vertices} vertices\n'
+        str_ = f'Room with {self.num_vertices} vertices\n'
         for i, vertex in enumerate(self.vertices):
             str_ += f'    {i}th vertex: {vertex}\n'
         return str_
 
     def get_edge(self, idx):
         idx1 = idx
-        idx2 = (idx + 1) % self.num_of_vertices
+        idx2 = (idx + 1) % self.num_vertices
         edge = RoomEdge(self.vertices[idx1], self.vertices[idx2]) 
         edge.idx1 = idx1
         edge.idx2 = idx2
@@ -48,13 +48,13 @@ class Room:
     
     def get_room_centre(self):
         centre = Vector2(0, 0)
-        if not self.num_of_vertices:
+        if not self.num_vertices:
             return centre
 
         # TODO: min / max can take a list.
         pos_min = Vector2(1e10, 1e10)
         pos_max = Vector2(-1e10, -1e10)
-        for i in range(self.num_of_vertices):
+        for i in range(self.num_vertices):
             pi = self.vertices[i]
             for j in range(2):
                 pos_min[j] = min(pos_min[j], pi[j])
@@ -66,13 +66,13 @@ class Room:
         return self.get_room_centre() + self.centre_shift
     
     def translate_room(self, trans):
-        for i in range(self.num_of_vertices):
+        for i in range(self.num_vertices):
             self.vertices[i] += trans
     
     def rotate_room(self, rad):
         cv = math.cos(rad)
         sv = math.sin(rad)
-        for i in range(self.num_of_vertices):
+        for i in range(self.num_vertices):
             p0 = self.vertices[i][0]
             p1 = self.vertices[i][1]
             self.vertices[i][0] = p0 * cv + p1 * sv
@@ -85,7 +85,7 @@ class Room:
     
     def scale_room(self, scaling):
         centre = self.get_room_centre()
-        for i in range(self.num_of_vertices):
+        for i in range(self.num_vertices):
             pi = self.vertices[i] - centre
             self.vertices[i] = centre + pi * scaling
         self.centre_shift = self.centre_shift * scaling
@@ -93,7 +93,7 @@ class Room:
     def get_room_bounding_box(self, pos_min, pos_max):
         p_min = Vector2(1e10, 1e10)
         p_max = Vector2(-1e10, -1e10)
-        for i in range(self.num_of_vertices):
+        for i in range(self.num_vertices):
             pi = self.vertices[i]
             for j in range(2):
                 p_min[j] = min(p_min[j], pi[j])
@@ -109,21 +109,21 @@ class Room:
     
     def init_walls(self):
         self.walls.clear()
-        for i in range(self.num_of_vertices):
+        for i in range(self.num_vertices):
             idx1 = i
-            idx2 = (i + 1) % self.num_of_vertices
+            idx2 = (i + 1) % self.num_vertices
             pos1 = self.vertices(idx1)
             pos2 = self.vertices(idx2)
             self.walls.append(RoomWall(pos1, pos2))
     
     def erase_wall(self, idx):
-        if idx >= self.num_of_walls:
+        if idx >= self.num_walls:
             return False
         self.walls.erase(self.walls.begin() + idx)
         return True
     
     def reset_door_flags(self):
-        self.door_flags = [False] * self.num_of_edges
+        self.door_flags = [False] * self.num_edges
     
     def set_door_flag(self, edge_idx, door_flag):
         self.door_flags[edge_idx] = door_flag

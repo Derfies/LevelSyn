@@ -21,7 +21,7 @@ class RoomTemplates:
                 str_ += f'    {j}th vertex: {vertex}\n'
         return str_
     
-    def load_templates(self, file_path):
+    def load(self, file_path):
         self.rooms.clear()
         tree = et.parse(file_path)
         xml_root = tree.getroot()

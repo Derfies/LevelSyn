@@ -8,7 +8,7 @@ from reactor.geometry.vector import Vector2, Vector3, Vector4
 from reactor.geometry.orthogonalpolygon import OrthogonalPolygon
 from reactor import utils
 
-import levelconfig
+from levelconfig import LevelConfig
 from clipperwrapper import compute_collide_area
 from levelmath import (
     NUMERICAL_TOLERANCE,
@@ -74,10 +74,11 @@ class ConfigSpace:
             return
 
         # Why does 0.5 makes everything better?
-        contact_thresh = levelconfig.ROOM_CONTACT_THRESH * 0.5
-        for i in range(room1.num_of_edges):
+        levelconfig = LevelConfig()
+        contact_thresh = levelconfig.ROOM_CONTACT_THRESHOLD * 0.5
+        for i in range(room1.num_edges):
             edge1 = room1.get_edge(i)
-            for j in range(room2.num_of_edges):
+            for j in range(room2.num_edges):
                 edge2 = room2.get_edge(j)
 
                 # Ignore edge combinations where there is no door.
@@ -471,7 +472,7 @@ if __name__ == '__main__':
 
     '''
     roomtemplates = RoomTemplates()
-    roomtemplates.load_templates(r'C:\Users\Jamie Davies\Documents\git\LevelSyn\data\building_blocks_fig1.xml')
+    roomtemplates.load(r'C:\Users\Jamie Davies\Documents\git\LevelSyn\data\building_blocks_fig1.xml')
     g = nx.Graph()
     for i, room in enumerate(roomtemplates.rooms):
         vertices = []
