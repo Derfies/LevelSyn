@@ -141,12 +141,18 @@ def room_distance(room1, room2):
     return math.sqrt(d)
 
 
-def segment_intersection(pa, pb, pc, pd, pi):
-    return segment_intersection(pa[0], pa[1], pb[0], pb[1], pc[0], pc[1], pd[0], pd[1], pi[0], pi[1])
+# def segment_intersection(pa, pb, pc, pd, pi):
+#     return segment_intersection(pa[0], pa[1], pb[0], pb[1], pc[0], pc[1], pd[0], pd[1], pi[0], pi[1])
 
 
 # Based on the example under http:#stackoverflow.com/questions/563198/how-do-you-detect-where-two-line-segments-intersect
-def segment_intersection(Ax, Ay, Bx, By, Cx, Cy, Dx, Dy, Ix, Iy):
+def segment_intersection(*args):
+    if len(args) == 10:
+        Ax, Ay, Bx, By, Cx, Cy, Dx, Dy = args
+    else:
+        pa, pb, pc, pd = args
+        Ax, Ay, Bx, By, Cx, Cy, Dx, Dy = pa[0], pa[1], pb[0], pb[1], pc[0], pc[1], pd[0], pd[1]
+
     Rx = Bx - Ax
     Ry = By - Ay
     Sx = Dx - Cx
@@ -160,9 +166,11 @@ def segment_intersection(Ax, Ay, Bx, By, Cx, Cy, Dx, Dy, Ix, Iy):
     t = (QPx * Sy - QPy * Sx) / rs
     u = (QPx * Ry - QPy * Rx) / rs
     if t >= 0 and t <= 1 and u >= 0 and u <= 1:
-        return True
+        Ix = Ax + t * Rx
+        Iy = Ay + t * Ry
+        return True, Vector2(Ix, Iy)
     else:
-        return False
+        return False, (None, None)
 
 
 def line_intersection(pa, pb, pc, pd, pi):

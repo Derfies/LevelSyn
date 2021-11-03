@@ -227,19 +227,19 @@ class ConfigSpace:
                 
                 if config_line1.config_lines_sq_length() < NUMERICAL_TOLERANCE_SQ and config_line2.config_lines_sq_length() < NUMERICAL_TOLERANCE_SQ:
                     if (config_line1.pos1 - config_line2.pos1).mag2() < NUMERICAL_TOLERANCE_SQ:
-                        intersect_space.add_config_line(config_line1)
+                        intersect_space.config_lines.append(config_line1)
                     continue
                     
                 elif config_line1.config_lines_sq_length() < NUMERICAL_TOLERANCE_SQ:
                     edge = RoomEdge(config_line2.pos1, config_line2.pos2)
                     if point_to_segment_sq_distance(config_line1.pos1, edge) < NUMERICAL_TOLERANCE_SQ:
-                        intersect_space.add_config_line(config_line1)
+                        intersect_space.config_lines.append(config_line1)
                     continue
                     
                 elif config_line2.config_lines_sq_length() < NUMERICAL_TOLERANCE_SQ:
                     edge = RoomEdge(config_line1.pos1, config_line1.pos2)
                     if point_to_segment_sq_distance(config_line2.pos1, edge) < NUMERICAL_TOLERANCE_SQ:
-                        intersect_space.add_config_line(config_line2)
+                        intersect_space.config_lines.append(config_line2)
                     continue
 
                 p11 = config_line1.pos1
@@ -255,7 +255,7 @@ class ConfigSpace:
                     flag_intersect, pi = segment_intersection(p11, p12, p21, p22)
                     if flag_intersect:
                         intersect_line = ConfigLine(pi)
-                        intersect_space.add_config_line(intersect_line)
+                        intersect_space.config_lines.append(intersect_line)
 
                 else:
 

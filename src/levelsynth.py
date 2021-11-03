@@ -15,8 +15,8 @@ from levelmath import NUMERICAL_TOLERANCE, room_contact, room_distance
 @dataclass
 class AABB2:
 
-	pos_min: Vector2
-	pos_max: Vector2
+    pos_min: Vector2
+    pos_max: Vector2
 
 
 def random2(max_):
@@ -1313,7 +1313,7 @@ class LevelSynth:
             for i in range(len(connected_indices)):
                 config_space_tmp = ConfigSpace(layout.rooms[connected_indices[i]], picked_room)
                 config_space_new = ConfigSpace.find_intersection(config_space, config_space_tmp)
-                if config_space_new.is_empty:
+                if not config_space_new.config_lines:
                     break
                 else:
                     config_space = config_space_new
