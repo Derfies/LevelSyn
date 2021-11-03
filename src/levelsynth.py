@@ -521,7 +521,7 @@ class LevelSynth:
     def synthesize_scene_via_main_loop(self):
         state0 = CurrentState()
         state0.state_graph = self.graph
-        state0.state_room_positions = self.room_positions
+        state0.state_room_positions = self.room_positions[:]
         state0.state_energy = 1e10
         state_stack = []
         state_stack.insert(0, state0)
@@ -537,7 +537,7 @@ class LevelSynth:
             self.flag_visited_no_node = self.graph.visited_no_node()
             flag_cyclic = False
             tmp_indices = self.graph.extract_deepest_face_or_chain(flag_cyclic, LevelConfig().FLAG_SMALL_FACE_FIRST)
-            indices = []
+            #indices = []
     #if 0 # Before 09/03/2013
             # if LevelConfig().SYNTHESIS_METHOD != 0 :
             #     # Select all the graph nodes...
@@ -545,20 +545,21 @@ class LevelSynth:
             #     for i in range(len(indices)):
             #         indices[i] = i
     #else:
-            indices = old_state.my_indices
+            indices = old_state.my_indices[:]
             if LevelConfig().SYNTHESIS_METHOD != 0:
                 if not self.graph.has_fixed_node() or not self.graph.visited_no_node():
                     indices = self.graph.get_unfixed_nodes()
 
-            for i in range(len(tmp_indices)):
-                indices.append(tmp_indices[i])
+            #for i in range(len(tmp_indices)):
+            #    indices.append(tmp_indices[i])
+            indices.extend(tmp_indices)
     #endif
             self.set_visited_neighbours(indices)
             for i in range(self.graph.num_nodes):
                 self.graph.get_node(i).flag_visited = False
 
             for i in range(len(indices)):
-                index = indices[i]
+                #index = indices[i]
                 self.graph.get_node(indices[i]).flag_visited = True
 
             old_state.state_graph = self.graph
