@@ -1,13 +1,16 @@
+import os
 import copy
 import random
 import math
 
+import networkx as nx
 from dataclasses import dataclass
 
 from clipperwrapper import compute_collide_area
 from configspace import ConfigSpace
 from levelconfig import LevelConfig
 from roomlayout import RoomLayout
+from reactor import utils
 from reactor.geometry.vector import Vector2
 from levelmath import NUMERICAL_TOLERANCE, room_contact, room_distance
 
@@ -105,6 +108,43 @@ class LevelSynth:
         self.layout = RoomLayout()
         self.visited_neighbours = []
         self.sequence = []
+
+        self.x = 0
+
+    def draw_layout(self):
+        #print('draw layout:', self.layout)
+        g = nx.DiGraph()
+        for room in self.layout.rooms:
+            tmp_g = nx.DiGraph()
+            for e in range(room.num_edges):
+                e = room.get_edge(e)
+                a, b = room.vertices[e.idx1], room.vertices[e.idx2]
+                head, tail = str(a), str(b)
+                tmp_g.add_edge(head, tail)
+                tmp_g.nodes[head]['position'] = a
+                tmp_g.nodes[tail]['position'] = b
+            g = nx.compose(g, tmp_g)
+
+        #tmp_g = nx.DiGraph()
+        #for i in range(self.graph.num_nodes):
+
+        # edges = list(self.graph.edges)
+        # for i, edge in enumerate(edges):
+        #     #pi = self.graph.get_node_pos(i)
+        #     a, b = pi
+        #     head, tail = str(a), str(b)
+        #     tmp_g.add_edge(head, tail)
+        #     tmp_g.nodes[head]['position'] = a
+        #     tmp_g.nodes[tail]['position'] = b
+        #     g = nx.compose(g, tmp_g)
+        #for edge in self.graph.edges:
+        #    tmp_g.add_edge(head, tail)
+        g = nx.compose(g, self.graph)
+
+        dir_name = r'C:\Users\Jamie Davies\Documents\git\LevelSyn\output'
+        file_name = '{0:03d}'.format(self.x)
+        file_path = os.path.join('output', dir_name, file_name) + '.png'
+        utils.draw_graph(g, file_path)
 
     def set_graph_and_templates(self, graph, templates):
         self.solution_count = 0
@@ -967,6 +1007,7 @@ class LevelSynth:
                 self.randomly_adjust_one_room(self.layout, graph, indices, None)
 
             energy_tmp, collide_area, connectivity = self.get_layout_energy(self.layout, graph)
+            print(f'energy_tmp 1: {energy_tmp}', collide_area, connectivity)
             energy_current = energy_tmp
             if i == 0:
                 energy_min = energy_current
@@ -974,7 +1015,7 @@ class LevelSynth:
 
             for j in range(m):
                 graph_tmp = graph
-                layout_tmp = self.layout
+                layout_tmp = copy.copy(self.layout)
                 self.randomly_adjust_one_room(layout_tmp, graph_tmp, indices, None)
     #if 1 # New on 08/16/2013
                 if self.flag_visited_no_node:
@@ -992,7 +1033,7 @@ class LevelSynth:
                         layout_tmp.rooms[idx].translate_room(-pos_cen)
     #endif
                 energy_tmp, collide_area, connectivity = self.get_layout_energy(layout_tmp, graph_tmp)
-                #print(f'energy_tmp: {energy_tmp}', collide_area, connectivity)
+                print(f'energy_tmp 2: {energy_tmp}', collide_area, connectivity)
                 if collide_area <= NUMERICAL_TOLERANCE and connectivity <= NUMERICAL_TOLERANCE:
                     new_state = old_state
                     new_state.state_graph = graph
@@ -1007,7 +1048,7 @@ class LevelSynth:
                         # layout_best = layout_tmp
                         energy_min = energy_tmp
     #ifndef PERFORMANCE_TEST
-                        print(f'A minimum energy: {energy_min}')
+                        print(f'A new minimum energy: {energy_min}')
     #endif
                     self.layout = layout_tmp
                     graph = graph_tmp
@@ -1015,6 +1056,9 @@ class LevelSynth:
 
                 pick_index_count += 1
                 pick_index_count = pick_index_count % len(indices)
+
+                self.draw_layout()
+                self.x += 1
 
             if i == 0 or energy_min < energy_history:
                 energy_history = energy_min
@@ -1485,8 +1529,8 @@ class LevelSynth:
                     collide_area_total += layout.cached_collision_energies[(i, j)]
 
     #ifdef PRINT_OUT_DEBUG_INFO
-        print(f'Number of colliding room pairs: {collide_count}')
-        print(f'Total area of colliding area: {collide_area_total}')
+        print(f'{self.x} Number of colliding room pairs: {collide_count}')
+        print(f'{self.x} Total area of colliding area: {collide_area_total}')
     #endif
         return collide_area_total
 
