@@ -10,7 +10,7 @@ class GraphEdge:
 
     @property
     def idx1(self):
-        return list(self.g.nodes).index(self.edge[0])
+        return list(self.g.nodes).index(self.edge[1])
 
     @property
     def indices(self):

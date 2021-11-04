@@ -135,7 +135,7 @@ def edge_contact(line1, line2):
 def room_distance(room1, room2):
     d = 1e10
     for i in range(room1.num_vertices):
-        pt = room1.get_vertex(i)
+        pt = room1.vertices[i]
         for j in range(room2.num_edges):
             edge = room2.get_edge(j)
             d_tmp = point_to_segment_sq_distance(pt, edge)

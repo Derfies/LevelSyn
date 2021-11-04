@@ -110,11 +110,12 @@ class LevelSynth:
         self.sequence = []
 
         self.x = 0
+        self.y = 0
 
-    def draw_layout(self):
+    def draw_layout(self, layout, i, sfx=None):
         #print('draw layout:', self.layout)
         g = nx.DiGraph()
-        for room in self.layout.rooms:
+        for room in layout.rooms:
             tmp_g = nx.DiGraph()
             for e in range(room.num_edges):
                 e = room.get_edge(e)
@@ -141,8 +142,10 @@ class LevelSynth:
         #    tmp_g.add_edge(head, tail)
         g = nx.compose(g, self.graph)
 
-        dir_name = r'C:\Users\Jamie Davies\OneDrive\Documents\git\LevelSyn\output'
-        file_name = '{0:03d}'.format(self.x)
+        dir_name = r'C:\Users\Jamie Davies\Documents\git\LevelSyn\output'
+        file_name = '{0:03d}'.format(i)
+        if sfx is not None:
+            file_name += sfx
         file_path = os.path.join('output', dir_name, file_name) + '.png'
         utils.draw_graph(g, file_path)
 
@@ -984,6 +987,15 @@ class LevelSynth:
     #     return True
     #
     def solve_1d_chainILS(self, indices, old_state, new_states):
+        """
+        Solves a single chain, which is most likely a face.
+
+        :param indices:
+        :param old_state:
+        :param new_states:
+        :return:
+
+        """
         graph = old_state.state_graph
         self.set_sequence_as_1d_chain(indices, graph)
         new_states.clear()
@@ -999,7 +1011,7 @@ class LevelSynth:
         #connectivity = 00
         energy_min = 1e10
         energy_history = 1e10
-        pick_index_count = 0
+        #pick_index_count = 0
         for i in range(n):
             layout_history = self.layout
             graph_history = graph
@@ -1008,11 +1020,11 @@ class LevelSynth:
                 self.randomly_adjust_one_room(self.layout, graph, indices, None)
 
             energy_tmp, collide_area, connectivity = self.get_layout_energy(self.layout, graph)
-            print(f'energy_tmp 1: {energy_tmp}', collide_area, connectivity)
+            #print(f'energy_tmp 1: {energy_tmp}', collide_area, connectivity)
             energy_current = energy_tmp
             if i == 0:
                 energy_min = energy_current
-                print(f'Initial energy: {energy_current}')
+                #print(f'Initial energy: {energy_current}')
 
             for j in range(m):
                 graph_tmp = graph
@@ -1034,7 +1046,7 @@ class LevelSynth:
                         layout_tmp.rooms[idx].translate_room(-pos_cen)
     #endif
                 energy_tmp, collide_area, connectivity = self.get_layout_energy(layout_tmp, graph_tmp)
-                print(f'energy_tmp 2: {energy_tmp}', collide_area, connectivity)
+                #print(f'energy_tmp 2: {energy_tmp}', collide_area, connectivity)
                 if collide_area <= NUMERICAL_TOLERANCE and connectivity <= NUMERICAL_TOLERANCE:
                     #print('SETTING NEW STATE')
                     new_state = old_state
@@ -1044,6 +1056,9 @@ class LevelSynth:
                     new_state.state_energy = energy_tmp
                     new_state.move_rooms_to_scene_centre(graph)
                     new_state.insert_to_new_states(new_states, graph)
+
+                    self.draw_layout(layout_tmp, self.x)
+                    self.x += 1
 
                 if energy_tmp < energy_current:
                     if energy_tmp < energy_min:
@@ -1056,11 +1071,11 @@ class LevelSynth:
                     graph = graph_tmp
                     energy_current = energy_tmp
 
-                pick_index_count += 1
-                pick_index_count = pick_index_count % len(indices)
+                # pick_index_count += 1
+                # pick_index_count = pick_index_count % len(indices)
 
-                self.draw_layout()
-                self.x += 1
+                # self.draw_layout(self.layout, self.x)
+                # self.x += 1
 
             if i == 0 or energy_min < energy_history:
                 energy_history = energy_min
@@ -1486,6 +1501,7 @@ class LevelSynth:
 
             if room_moved == -1 or room_moved == idx0 or room_moved == idx1 or layout.cached_connectivities.find((idx0, idx1)) == layout.cached_connectivities.end():
                 contact_area = room_contact(layout.rooms[idx0], layout.rooms[idx1])
+                #print(contact_area, LevelConfig().ROOM_CONTACT_THRESHOLD, contact_area <= LevelConfig().ROOM_CONTACT_THRESHOLD)
                 if contact_area <= LevelConfig().ROOM_CONTACT_THRESHOLD:
                     if LevelConfig().FLAG_DISCRETE_CONNECTIVITY_FUNCTION:
                         connectivity += 1
@@ -1496,10 +1512,12 @@ class LevelSynth:
                         layout.cached_connectivities[(idx0, idx1)] = d
                         connectivity += d
                     factor = 1.1
-                    layout.get_room(idx0).update_energy(factor)
-                    layout.get_room(idx1).update_energy(factor)
+                    layout.rooms[idx0].update_energy(factor)
+                    layout.rooms[idx1].update_energy(factor)
                 else:
                     layout.cached_connectivities[(idx0, idx1)] = 0.0
+                    # self.draw_layout(layout, self.y, 'contact')
+                    # self.y += 1
             else:
                 connectivity += layout.cached_connectivities[(idx0, idx1)]
         return connectivity
@@ -1538,8 +1556,8 @@ class LevelSynth:
                     collide_area_total += layout.cached_collision_energies[(i, j)]
 
     #ifdef PRINT_OUT_DEBUG_INFO
-        print(f'{self.x} Number of colliding room pairs: {collide_count}')
-        print(f'{self.x} Total area of colliding area: {collide_area_total}')
+        # print(f'{self.x} Number of colliding room pairs: {collide_count}')
+        # print(f'{self.x} Total area of colliding area: {collide_area_total}')
     #endif
         return collide_area_total
 
