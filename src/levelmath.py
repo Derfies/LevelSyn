@@ -69,8 +69,10 @@ def room_contact(room1, room2):
         for j in range(room2.num_edges):
             edge2 = room2.get_edge(j)
             if not edge1.door_flag or not edge2.door_flag:
+                print('    bail bc one is not edge')
                 continue
             contact_area += edge_contact(edge1, edge2)
+    #print('contact_area:', contact_area)
     return contact_area
 
 

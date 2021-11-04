@@ -141,7 +141,7 @@ class LevelSynth:
         #    tmp_g.add_edge(head, tail)
         g = nx.compose(g, self.graph)
 
-        dir_name = r'C:\Users\Jamie Davies\Documents\git\LevelSyn\output'
+        dir_name = r'C:\Users\Jamie Davies\OneDrive\Documents\git\LevelSyn\output'
         file_name = '{0:03d}'.format(self.x)
         file_path = os.path.join('output', dir_name, file_name) + '.png'
         utils.draw_graph(g, file_path)
@@ -1036,6 +1036,7 @@ class LevelSynth:
                 energy_tmp, collide_area, connectivity = self.get_layout_energy(layout_tmp, graph_tmp)
                 print(f'energy_tmp 2: {energy_tmp}', collide_area, connectivity)
                 if collide_area <= NUMERICAL_TOLERANCE and connectivity <= NUMERICAL_TOLERANCE:
+                    #print('SETTING NEW STATE')
                     new_state = old_state
                     new_state.state_graph = graph
                     new_state.state_room_positions = layout_tmp.get_room_positions()
@@ -1472,17 +1473,21 @@ class LevelSynth:
             flag_visited0 = graph.get_node(idx0).flag_visited
             flag_visited1 = graph.get_node(idx1).flag_visited
             if flag_visited_only and (not flag_visited0 or not flag_visited1):
+                #print('    bail bc not visited')
                 continue
 
             flag_fixed0 = graph.get_node(idx0).flag_fixed
             flag_fixed1 = graph.get_node(idx1).flag_fixed
             if flag_fixed0 and flag_fixed1:
+                #print('    bail bc fixed')
                 continue
+
+            #print('HERE')
 
             if room_moved == -1 or room_moved == idx0 or room_moved == idx1 or layout.cached_connectivities.find((idx0, idx1)) == layout.cached_connectivities.end():
                 contact_area = room_contact(layout.rooms[idx0], layout.rooms[idx1])
                 if contact_area <= LevelConfig().ROOM_CONTACT_THRESHOLD:
-                    if LevelConfig().FLAG_DISCRETE_CONNECT_FUNC:
+                    if LevelConfig().FLAG_DISCRETE_CONNECTIVITY_FUNCTION:
                         connectivity += 1
                         layout.cached_connectivities[(idx0, idx1)] = 1
                     else:
@@ -1504,19 +1509,22 @@ class LevelSynth:
         collide_count = 0
         num_rooms = layout.num_rooms
         for i in range(num_rooms):
-            for j in range(num_rooms):
+            for j in range(i + 1, num_rooms):
                 flag_visited0 = graph.get_node(i).flag_visited
                 flag_visited1 = graph.get_node(j).flag_visited
                 if flag_visited_only and (not flag_visited0 or not flag_visited1):
+                    #print('**** out bc flag visited')
                     continue
 
                 flag_fixed0 = graph.get_node(i).flag_fixed
                 flag_fixed1 = graph.get_node(j).flag_fixed
                 if flag_fixed0 and flag_fixed1:
+                    #print('**** out bc flag fixed')
                     continue
 
-                if room_that_moved == -1 or room_that_moved == i or room_that_moved == j or layout.cached_collision_energies.find((i, j)) == layout.cached_collision_energies.end():
+                if room_that_moved == -1 or room_that_moved == i or room_that_moved == j or layout.cached_collision_energies[(i, j)] == layout.cached_collision_energies.end():
                     collide_area = self.room_collides(layout.rooms[i], layout.rooms[j])
+                    #print('collide_area:', collide_area)
                     if collide_area > 0:
                         collide_area_total += collide_area
                         collide_count += 1
@@ -1562,10 +1570,16 @@ class LevelSynth:
         bb1 = AABB2(*room1.get_room_bounding_box())
         bb2 = AABB2(*room2.get_room_bounding_box())
         if not self.test_bounding_box_collides(bb1, bb2):
+            #print('early out bc bb doesnt collide')
             return 0.0
 
         # Use the Clipper library...
+        # print('')
+        # print(id(room1), id(room2))
+        # print(room1.vertices)
+        # print(room2.vertices)
         collide_area = compute_collide_area(room1, room2)
+        # print(collide_area)
 
         return collide_area
 

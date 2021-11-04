@@ -643,15 +643,15 @@ void CLevelSynth::SynthesizeSceneViaMainLoop()
         std::vector<int> tmpIndices = m_ptrGraph->ExtractDeepestFaceOrChain(flagCyclic, CLevelConfig::m_flagSmallFaceFirst);
         std::vector<int> indices;
 #if 0 // Before 09/03/2013
-		if ( CLevelConfig::m_synMethod != 0 )
-		{
-			// Select all the graph nodes...
-			indices.resize(m_ptrGraph->GetNumOfNodes());
-			for ( int i=0; i<int(indices.size()); i++ )
-			{
-				indices[i] = i;
-			}
-		}
+//		if ( CLevelConfig::m_synMethod != 0 )
+//		{
+//			// Select all the graph nodes...
+//			indices.resize(m_ptrGraph->GetNumOfNodes());
+//			for ( int i=0; i<int(indices.size()); i++ )
+//			{
+//				indices[i] = i;
+//			}
+//		}
 #else
         indices = oldState.myIndices;
         if (CLevelConfig::m_synMethod != 0)
