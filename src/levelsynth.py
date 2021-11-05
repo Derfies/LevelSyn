@@ -2,6 +2,7 @@ import os
 import copy
 import random
 import math
+from functools import cmp_to_key
 
 import networkx as nx
 from dataclasses import dataclass
@@ -142,7 +143,7 @@ class LevelSynth:
         #    tmp_g.add_edge(head, tail)
         g = nx.compose(g, self.graph)
 
-        dir_name = r'C:\Users\Jamie Davies\Documents\git\LevelSyn\output'
+        dir_name = r'C:\Users\Jamie Davies\OneDrive\Documents\git\LevelSyn\output'
         file_name = '{0:03d}'.format(i)
         if sfx is not None:
             file_name += sfx
@@ -558,9 +559,12 @@ class LevelSynth:
     # #     saveFlag = doc.SaveFile(fileName)
     # #     return saveFlag
     #
-    # def CompareStateEnergySmallerFirst(self, state1, state2):
-    #     return state1.state_energy < state2.state_energy
-    #
+    def compare_state_energy_smaller_first(self, state1, state2):
+        if state1.state_energy == state2.state_energy:
+            return 0
+        else:
+            return state1.state_energy < state2.state_energy
+
     def synthesize_scene_via_main_loop(self):
         state0 = CurrentState()
         state0.state_graph = self.graph
@@ -618,6 +622,7 @@ class LevelSynth:
             else:
                 self.backtrack_level += 1
 
+            print('self.graph.visited_all_nodes():', self.graph.visited_all_nodes())
             if self.graph.visited_all_nodes():
                 for i in range(len(new_states)):
                     if self.solution_count >= target_num_solutions:
@@ -634,7 +639,7 @@ class LevelSynth:
 
                     #float CLevelSynth.get_layout_energy(CRoomLayout& layout, graph, collide_area, connectivity)
 
-                    flag_valid = self.layout_collide(self.layout) <= NUMERICAL_TOLERANCE and self.check_room_connectivity(self.layout, self.graph) <= NUMERICAL_TOLERANCE
+                    flag_valid = self.layout_collide2(self.layout) <= NUMERICAL_TOLERANCE and self.check_room_connectivity(self.layout, self.graph) <= NUMERICAL_TOLERANCE
                     if not flag_valid:
                         # Skip invalid solution...
                         continue
@@ -976,7 +981,7 @@ class LevelSynth:
     # #ifndef PERFORMANCE_TEST
     #     print(f'Number of valid states: {len(new_states)})
     # #endif
-    #     sort(new_states.begin(), new_states.end(), CompareStateEnergySmallerFirst)
+    #     sort(new_states.begin(), new_states.end(), compare_state_energy_smaller_first)
     #     num_solutions_to_track = min(int(new_states.size()), NUM_SOLUTIONS_TO_TRACK)
     #     std.vector<CurrentState> newer_states(num_solutions_to_track)
     #     for (i = 0; i < num_solutions_to_track; i++):
@@ -1004,15 +1009,12 @@ class LevelSynth:
             return True
 
         # Borrow the parameters from simulated annealing...
-        n = LevelConfig().SA_NUM_OF_CYCLES
-        m = LevelConfig().SA_NUM_OF_TRIALS
-        # CRoomLayout layout_best; # Current best result so far
-        #collide_area = 0
-        #connectivity = 00
+        # n = LevelConfig().SA_NUM_OF_CYCLES
+        # m = LevelConfig().SA_NUM_OF_TRIALS
+
         energy_min = 1e10
         energy_history = 1e10
-        #pick_index_count = 0
-        for i in range(n):
+        for i in range(LevelConfig().SA_NUM_OF_CYCLES):
             layout_history = self.layout
             graph_history = graph
             if i != 0:
@@ -1026,7 +1028,7 @@ class LevelSynth:
                 energy_min = energy_current
                 #print(f'Initial energy: {energy_current}')
 
-            for j in range(m):
+            for j in range(LevelConfig().SA_NUM_OF_TRIALS):
                 graph_tmp = graph
                 layout_tmp = copy.copy(self.layout)
                 self.randomly_adjust_one_room(layout_tmp, graph_tmp, indices, None)
@@ -1074,8 +1076,8 @@ class LevelSynth:
                 # pick_index_count += 1
                 # pick_index_count = pick_index_count % len(indices)
 
-                # self.draw_layout(self.layout, self.x)
-                # self.x += 1
+                self.draw_layout(self.layout, self.x)
+                self.x += 1
 
             if i == 0 or energy_min < energy_history:
                 energy_history = energy_min
@@ -1089,8 +1091,9 @@ class LevelSynth:
             return False
 
         print(f'Number of valid states: {len(new_states)}')
-        sort(new_states.begin(), new_states.end(), CompareStateEnergySmallerFirst)
-        num_solutions_to_track = min(len(new_states), LevelConfig().NUM_SOLUTIONS_TO_TRACK)
+
+        new_states.sort(key=cmp_to_key(self.compare_state_energy_smaller_first))
+        num_solutions_to_track = min(len(new_states), LevelConfig().NUMBER_OF_SOLUTIONS_TO_TRACK)
         newer_states = []
         for i in range(num_solutions_to_track):
             newer_states.append(new_states[i])
@@ -1561,26 +1564,26 @@ class LevelSynth:
     #endif
         return collide_area_total
 
-    # def layout_collide(self, layout):
-    #     collide_area_total = 0
-    #     collide_count = 0
-    #     num_rooms = layout.num_rooms
-    #     for i in range(num_rooms):
-    #         for j in range(num_rooms):
-    #             if layout.get_room(i).boundary_type == 1 and layout.get_room(j).boundary_type == 1:
-    #                 continue
-    #
-    #             collide_area = self.room_collides(layout.get_room(i), layout.get_room(j))
-    #             if collide_area > 0:
-    #                 collide_area_total += collide_area
-    #                 collide_count += 1
-    #
-    # #ifdef PRINT_OUT_DEBUG_INFO
-    #     print(f'Number of colliding room pairs: {collide_count}')
-    #     print(f'Total area of colliding area: {collide_area_total}')
-    # #endif
-    #     return collide_area_total
-    #
+    def layout_collide2(self, layout):
+        collide_area_total = 0
+        collide_count = 0
+        num_rooms = layout.num_rooms
+        for i in range(num_rooms):
+            for j in range(num_rooms):
+                if layout.rooms[i].boundary_type == 1 and layout.rooms[j].boundary_type == 1:
+                    continue
+
+                collide_area = self.room_collides(layout.rooms[i], layout.rooms[j])
+                if collide_area > 0:
+                    collide_area_total += collide_area
+                    collide_count += 1
+
+    #ifdef PRINT_OUT_DEBUG_INFO
+        print(f'Number of colliding room pairs: {collide_count}')
+        print(f'Total area of colliding area: {collide_area_total}')
+    #endif
+        return collide_area_total
+
     def room_collides(self, room1, room2):
         collide_area = -1
 
