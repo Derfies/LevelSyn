@@ -5,6 +5,7 @@ import math
 from functools import cmp_to_key
 
 import networkx as nx
+import numpy as np
 from dataclasses import dataclass
 
 from clipperwrapper import compute_collide_area
@@ -33,6 +34,7 @@ def random2(max_):
 class CurrentState:
     
     def __init__(self):
+        self.state_graph = None
         self.state_room_positions = []
         self.my_indices = []
         self.state_energy = 0
@@ -79,20 +81,26 @@ class CurrentState:
         return state_diff
 
     def insert_to_new_states(self, new_states, graph):
+
+        # WARNING - Set to zero here
         state_diff_thresh = LevelConfig().STATE_DIFFERENCE_THRESHOLD
         if state_diff_thresh <= 0:
+            print('    added state:', self)
             new_states.append(self)
             return True
 
         for i in range(len(new_states)):
             if self.state_energy < new_states[i].state_energy:
+                print('    ignoring state due to:', self.state_energy, '<', new_states[i].state_energy)
                 continue
 
             state_diff = self.get_state_difference(new_states[i], graph)
             if state_diff <= state_diff_thresh:
+                print('    ignoring state due to:', state_diff, '<=', state_diff_thresh)
                 return False
 
         new_states.append(self)
+        print('    added state:', self)
         return True
  
         
@@ -113,8 +121,7 @@ class LevelSynth:
         self.x = 0
         self.y = 0
 
-    def draw_layout(self, layout, i, sfx=None):
-        #print('draw layout:', self.layout)
+    def draw_layout(self, layout, i, sfx=None, debug=False):
         g = nx.DiGraph()
         for room in layout.rooms:
             tmp_g = nx.DiGraph()
@@ -127,27 +134,16 @@ class LevelSynth:
                 tmp_g.nodes[tail]['position'] = b
             g = nx.compose(g, tmp_g)
 
-        #tmp_g = nx.DiGraph()
-        #for i in range(self.graph.num_nodes):
 
-        # edges = list(self.graph.edges)
-        # for i, edge in enumerate(edges):
-        #     #pi = self.graph.get_node_pos(i)
-        #     a, b = pi
-        #     head, tail = str(a), str(b)
-        #     tmp_g.add_edge(head, tail)
-        #     tmp_g.nodes[head]['position'] = a
-        #     tmp_g.nodes[tail]['position'] = b
-        #     g = nx.compose(g, tmp_g)
-        #for edge in self.graph.edges:
-        #    tmp_g.add_edge(head, tail)
-        g = nx.compose(g, self.graph)
+        #g = nx.compose(g, self.graph)
 
         dir_name = r'C:\Users\Jamie Davies\OneDrive\Documents\git\LevelSyn\output'
         file_name = '{0:03d}'.format(i)
         if sfx is not None:
             file_name += sfx
         file_path = os.path.join('output', dir_name, file_name) + '.png'
+        if debug:
+            print(i, 'file_path:', file_path)
         utils.draw_graph(g, file_path)
 
     def set_graph_and_templates(self, graph, templates):
@@ -224,42 +220,28 @@ class LevelSynth:
     #
     def init_scene(self):
         self.layout.clear_layout()
-        #num_rooms =
         num_templates = self.templates.num_templates
         for i in range(self.graph.num_nodes):
-            #idx = int(rand() / float(RAND_MAX) * num_templates)
             idx = self.graph.get_node(i).type % num_templates
-            #idx = idx
             room = self.templates.rooms[idx]
-            #room.ScaleRoom(0.5f)
             pi = self.graph.get_node_pos(i)
             c = room.get_room_centre()
             trans = pi - c
             room.translate_room(trans)
-            # color = randomColorFromIndex(i)
-            # if mag2(color) > 2.5f:
-            #     color = color * 0.5f
-            # room.SetColor(color)
             self.layout.rooms.append(copy.deepcopy(room))
 
     def get_layout(self, graph, room_positions):
         layout = RoomLayout()
         num_rooms = graph.num_nodes
         num_templates = self.templates.num_templates
-        #for (i = 0; i < num_rooms; i++):
         for i in range(num_rooms):
             idx = graph.get_node(i).type
             idx = idx % num_templates
-            room = self.templates.rooms[idx]
+            room = copy.deepcopy(self.templates.rooms[idx])
             pi = room_positions[i]
             c = room.get_room_centre()
             trans = pi - c
             room.translate_room(trans)
-           # color = randomColorFromIndex(i)
-           # if mag2(color) > 2.5f:
-           #     color = color * 0.5f
-
-            #room.SetColor(color)
             room.flag_fixed = graph.get_node(i).flag_fixed
             layout.rooms.append(room)
 
@@ -578,12 +560,38 @@ class LevelSynth:
         num_partials = 0
         self.backtrack_count = 0
         self.backtrack_level = 0
+
+
+        '''
+        NODE: 0 N7
+        NODE: 1 N11
+        NODE: 2 N3
+        NODE: 3 N2
+        NODE: 4 N6
+        NODE: 5 N10
+        NODE: 6 N12
+        NODE: 7 N8
+        NODE: 8 N9
+        '''
+
+        # index_sets = [
+        #     [0, 1, 6, 7],
+        #     [4, 2, 0, 7],
+        # ]
+        #
+        # index_index = 0
+
         while self.solution_count < target_num_solutions and state_stack:
             old_state = state_stack.pop(0)
             self.set_current_state(old_state)
+            self.draw_layout(self.layout, self.x, 'oldstate', debug=True)
+            self.x += 1
             self.flag_visited_no_node = self.graph.visited_no_node()
-            flag_cyclic = False
-            tmp_indices = self.graph.extract_deepest_face_or_chain(flag_cyclic, LevelConfig().FLAG_SMALL_FACE_FIRST)
+            #flag_cyclic = False
+            tmp_indices, flag_cyclic = self.graph.extract_deepest_face_or_chain(LevelConfig().FLAG_SMALL_FACE_FIRST)
+            #tmp_indices = index_sets[index_index]
+            #index_index += 1
+            print('tmp_indices:', tmp_indices)
             #indices = []
     #if 0 # Before 09/03/2013
             # if LevelConfig().SYNTHESIS_METHOD != 0 :
@@ -597,22 +605,42 @@ class LevelSynth:
                 if not self.graph.has_fixed_node() or not self.graph.visited_no_node():
                     indices = self.graph.get_unfixed_nodes()
 
+            print('indices:', indices)
+
             #for i in range(len(tmp_indices)):
             #    indices.append(tmp_indices[i])
             indices.extend(tmp_indices)
+
+            print('indices2:', indices)
     #endif
             self.set_visited_neighbours(indices)
             for i in range(self.graph.num_nodes):
                 self.graph.get_node(i).flag_visited = False
+                print('    set visited:', i, False)
 
-            for i in range(len(indices)):
-                #index = indices[i]
-                self.graph.get_node(indices[i]).flag_visited = True
+            for index in indices:
+                self.graph.get_node(index).flag_visited = True
+                print('    set visited:', index, True)
+
+            # ns = list(self.graph)
+            # for index in range(self.graph.num_nodes):
+            #     print('NODE:', index, ns[index])
+            #     for cnix in self.get_connected_indices(self.graph, index, False):
+            #         print('    CONN NODE:', cnix, ns[cnix])
+            #
+            # raise
+
+            # print('')
+            # for k in range(self.graph.num_nodes):
+            #     print('fixed:', k, '->', self.graph.get_node(k).flag_fixed)
+            # print('')
 
             old_state.state_graph = self.graph
             new_states = []
             self.chain_count += 1
             flag = self.solve_1d_chain(indices, tmp_indices, old_state, new_states)
+            print('')
+            print('len(new_states):', len(new_states))
             if not new_states:
     #ifndef PERFORMANCE_TEST
                 print(f'Backtracked from level {self.backtrack_level} to level {self.backtrack_level - 1}!')
@@ -622,11 +650,14 @@ class LevelSynth:
             else:
                 self.backtrack_level += 1
 
-            print('self.graph.visited_all_nodes():', self.graph.visited_all_nodes())
             if self.graph.visited_all_nodes():
+                print('completed!')
                 for i in range(len(new_states)):
                     if self.solution_count >= target_num_solutions:
+                        print('    break bc found num of desired solutions')
                         break
+
+                    print('loading solution:', i)
 
                     self.set_current_state(new_states[i])
                     if new_states[i].state_energy < energy_min:
@@ -639,12 +670,17 @@ class LevelSynth:
 
                     #float CLevelSynth.get_layout_energy(CRoomLayout& layout, graph, collide_area, connectivity)
 
-                    flag_valid = self.layout_collide2(self.layout) <= NUMERICAL_TOLERANCE and self.check_room_connectivity(self.layout, self.graph) <= NUMERICAL_TOLERANCE
+
+                    self.draw_layout(self.layout, self.x, 'candidate', debug=True)
+                    self.x += 1
+                    coll = self.layout_collide2(self.layout)
+                    conn = self.check_room_connectivity(self.layout, self.graph)
+                    flag_valid = coll <= NUMERICAL_TOLERANCE and conn <= NUMERICAL_TOLERANCE
                     if not flag_valid:
+                        print('skipping invalid:', id(self.layout))
                         # Skip invalid solution...
                         continue
 
-                    #DumpSolutionIntoXML()
                     self.solution_count += 1
 
             else:
@@ -657,6 +693,9 @@ class LevelSynth:
                         graph_best.get_node(n).pos = pn
 
                     layout_best = self.get_layout(graph_best, new_states[i].state_room_positions)
+
+                    self.draw_layout(layout_best, self.x, 'layout_best', debug=True)
+                    self.x += 1
                     #ofstream fout
     #ifdef DUMP_PARTIAL_SOLUTION
                     #graph_best.SaveGraphAsXML(CLevelConfig.AddOutputPrefix(sprint(f'partial_%03d.xml', num_partials)).c_str())
@@ -1001,6 +1040,7 @@ class LevelSynth:
         :return:
 
         """
+        print('SOLVE 1D CHAIN INDICES:', indices)
         graph = old_state.state_graph
         self.set_sequence_as_1d_chain(indices, graph)
         new_states.clear()
@@ -1050,16 +1090,18 @@ class LevelSynth:
                 energy_tmp, collide_area, connectivity = self.get_layout_energy(layout_tmp, graph_tmp)
                 #print(f'energy_tmp 2: {energy_tmp}', collide_area, connectivity)
                 if collide_area <= NUMERICAL_TOLERANCE and connectivity <= NUMERICAL_TOLERANCE:
-                    #print('SETTING NEW STATE')
-                    new_state = old_state
-                    new_state.state_graph = graph
+                    new_state = CurrentState()
+
+                    # TODO: State doesn't track room types???
+                    new_state.state_graph = copy.deepcopy(graph)
                     new_state.state_room_positions = layout_tmp.get_room_positions()
-                    #print('state_room_positions:', new_state.state_room_positions)
                     new_state.state_energy = energy_tmp
                     new_state.move_rooms_to_scene_centre(graph)
                     new_state.insert_to_new_states(new_states, graph)
+                    new_state.my_indices = old_state.my_indices[:]
+                    #print('new_state indices:', new_state.my_indices)
 
-                    self.draw_layout(layout_tmp, self.x)
+                    self.draw_layout(layout_tmp, self.x, 'new_state', debug=True)
                     self.x += 1
 
                 if energy_tmp < energy_current:
@@ -1067,7 +1109,7 @@ class LevelSynth:
                         # layout_best = layout_tmp
                         energy_min = energy_tmp
     #ifndef PERFORMANCE_TEST
-                        print(f'A new minimum energy: {energy_min}')
+                        #print(f'A new minimum energy: {energy_min}')
     #endif
                     self.layout = layout_tmp
                     graph = graph_tmp
@@ -1076,7 +1118,7 @@ class LevelSynth:
                 # pick_index_count += 1
                 # pick_index_count = pick_index_count % len(indices)
 
-                self.draw_layout(self.layout, self.x)
+                self.draw_layout(self.layout, self.x, 'iter')
                 self.x += 1
 
             if i == 0 or energy_min < energy_history:
@@ -1103,7 +1145,7 @@ class LevelSynth:
 
     def set_current_state(self, s):
         self.graph = s.state_graph
-        self.room_positions = s.state_room_positions
+        self.room_positions[:] = s.state_room_positions
         self.layout = self.get_layout(self.graph, self.room_positions)
 
     def set_sequence_as_1d_chain(self, indices, graph):
@@ -1361,11 +1403,12 @@ class LevelSynth:
     #
     def randomly_adjust_one_room03(self, layout, graph, indices, weighted_indices):
         picked_room_index = self.randomly_pick_one_room(layout, indices, weighted_indices)
-        picked_room = layout.rooms[picked_room_index]
+        #picked_room = layout.rooms[picked_room_index]
         self.sample_config_space_for_picked_room(layout, graph, indices, picked_room_index)
         return picked_room_index
 
     def sample_config_space_for_picked_room(self, layout, graph, indices, picked_room_index):
+        print('*********')
         picked_room = layout.rooms[picked_room_index]
         config_space = ConfigSpace()
         connected_indices = self.get_connected_indices(graph, picked_room_index)
@@ -1374,15 +1417,25 @@ class LevelSynth:
             idx0 = connected_indices[0]
             config_space0 = ConfigSpace(layout.rooms[idx0], picked_room)
             config_space = config_space0
-            for i in range(len(connected_indices)):
+            print('start:', 0, idx0, config_space)
+            print('    sample_config_space_for_picked_room:', self.x, 'index:', picked_room_index, 'oindices:', connected_indices)
+            for i in range(1, len(connected_indices)):
+                print('i:', i, connected_indices[i], config_space)
                 config_space_tmp = ConfigSpace(layout.rooms[connected_indices[i]], picked_room)
                 config_space_new = ConfigSpace.find_intersection(config_space, config_space_tmp)
                 if not config_space_new.config_lines:
+                    #continue
+                    #print('BREAK')
+                    #config_space = ConfigSpace()
                     break
                 else:
                     config_space = config_space_new
+            #print('        result:', len(config_space.config_lines))
+            print('result:', config_space)
 
         while_cnt = 0
+        if not config_space.config_lines:
+            print('        no result.. randomly pick another one!')
         while not config_space.config_lines:
             other_room_index = self.randomly_pick_another_room(layout, picked_room_index)
             other_room = layout.rooms[other_room_index]
@@ -1394,6 +1447,7 @@ class LevelSynth:
 
         pos = config_space.randomly_sample_config_space()
         dp = pos - picked_room.get_room_centre()
+        print('        move:', picked_room_index, dp)
         picked_room.translate_room(dp)
 
     def randomly_adjust_one_room04(self, layout, graph, indices, weighted_indices):
@@ -1468,7 +1522,8 @@ class LevelSynth:
 
         if LevelConfig().SIGMA_CONNECTIVITY > 0:
             connectivity = self.check_room_connectivity(layout, graph, True, room_moved)
-            layout_energy *= math.exp(connectivity * LevelConfig().SIGMA_CONNECTIVITY)
+            #layout_energy *= math.exp(connectivity * LevelConfig().SIGMA_CONNECTIVITY)
+            layout_energy *= np.exp(connectivity * LevelConfig().SIGMA_CONNECTIVITY)
 
         # if LevelConfig().SIGMA_CONTACT > 0 and do_contact:
         #     contact_area = -self.layout_contact(layout, graph, True, LevelConfig().FLAG_NON_OVERLAP_CONTACT, indices)
@@ -1491,20 +1546,17 @@ class LevelSynth:
             flag_visited0 = graph.get_node(idx0).flag_visited
             flag_visited1 = graph.get_node(idx1).flag_visited
             if flag_visited_only and (not flag_visited0 or not flag_visited1):
-                #print('    bail bc not visited')
                 continue
 
             flag_fixed0 = graph.get_node(idx0).flag_fixed
             flag_fixed1 = graph.get_node(idx1).flag_fixed
             if flag_fixed0 and flag_fixed1:
-                #print('    bail bc fixed')
                 continue
 
             #print('HERE')
 
             if room_moved == -1 or room_moved == idx0 or room_moved == idx1 or layout.cached_connectivities.find((idx0, idx1)) == layout.cached_connectivities.end():
                 contact_area = room_contact(layout.rooms[idx0], layout.rooms[idx1])
-                #print(contact_area, LevelConfig().ROOM_CONTACT_THRESHOLD, contact_area <= LevelConfig().ROOM_CONTACT_THRESHOLD)
                 if contact_area <= LevelConfig().ROOM_CONTACT_THRESHOLD:
                     if LevelConfig().FLAG_DISCRETE_CONNECTIVITY_FUNCTION:
                         connectivity += 1
@@ -1534,18 +1586,15 @@ class LevelSynth:
                 flag_visited0 = graph.get_node(i).flag_visited
                 flag_visited1 = graph.get_node(j).flag_visited
                 if flag_visited_only and (not flag_visited0 or not flag_visited1):
-                    #print('**** out bc flag visited')
                     continue
 
                 flag_fixed0 = graph.get_node(i).flag_fixed
                 flag_fixed1 = graph.get_node(j).flag_fixed
                 if flag_fixed0 and flag_fixed1:
-                    #print('**** out bc flag fixed')
                     continue
 
                 if room_that_moved == -1 or room_that_moved == i or room_that_moved == j or layout.cached_collision_energies[(i, j)] == layout.cached_collision_energies.end():
                     collide_area = self.room_collides(layout.rooms[i], layout.rooms[j])
-                    #print('collide_area:', collide_area)
                     if collide_area > 0:
                         collide_area_total += collide_area
                         collide_count += 1
@@ -1569,7 +1618,7 @@ class LevelSynth:
         collide_count = 0
         num_rooms = layout.num_rooms
         for i in range(num_rooms):
-            for j in range(num_rooms):
+            for j in range(i + 1, num_rooms):
                 if layout.rooms[i].boundary_type == 1 and layout.rooms[j].boundary_type == 1:
                     continue
 
@@ -1579,8 +1628,8 @@ class LevelSynth:
                     collide_count += 1
 
     #ifdef PRINT_OUT_DEBUG_INFO
-        print(f'Number of colliding room pairs: {collide_count}')
-        print(f'Total area of colliding area: {collide_area_total}')
+        # print(f'Number of colliding room pairs: {collide_count}')
+        # print(f'Total area of colliding area: {collide_area_total}')
     #endif
         return collide_area_total
 
@@ -1591,18 +1640,9 @@ class LevelSynth:
         bb1 = AABB2(*room1.get_room_bounding_box())
         bb2 = AABB2(*room2.get_room_bounding_box())
         if not self.test_bounding_box_collides(bb1, bb2):
-            #print('early out bc bb doesnt collide')
             return 0.0
 
-        # Use the Clipper library...
-        # print('')
-        # print(id(room1), id(room2))
-        # print(room1.vertices)
-        # print(room2.vertices)
-        collide_area = compute_collide_area(room1, room2)
-        # print(collide_area)
-
-        return collide_area
+        return compute_collide_area(room1, room2)
 
     # def BoundingBoxCollidesArea(self, bb1, bb2):
     #     collide_area = -1.f

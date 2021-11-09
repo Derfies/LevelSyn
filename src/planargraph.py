@@ -27,6 +27,7 @@ class PlanarGraph(Graph):
         for face in FaceAnalysis(g).get_faces():
             indices = [idx for idx, node in enumerate(nodes) if node in face]
             g.faces.append(GraphFace(g, indices))
+        g.set_node_neighbours()
         return g
 
     @property
@@ -102,7 +103,7 @@ class PlanarGraph(Graph):
         count = 0
         for i in range(len(indices)):
             idx = indices[i]
-            neighbors = self.get_node(idx).get_neighbours()
+            neighbors = self.get_node(idx).neighbours
             for j in range(len(neighbors)):
                 idx_tmp = neighbors[j]
                 if self.get_node(idx_tmp).flag_visited:
@@ -116,11 +117,11 @@ class PlanarGraph(Graph):
                 return True
         return False
 
-    def extract_deepest_face_or_chain(self, flag_cyclic, flag_small_face_first):
+    def extract_deepest_face_or_chain(self, flag_small_face_first):
         if self.visited_no_node() and self.has_fixed_node():
             # Handle the fixed nodes first...
             indices = self.get_fixed_nodes()
-            return indices
+            return indices, False
 
         if self.chains:
             for i in range(len(self.chains)):
@@ -142,24 +143,27 @@ class PlanarGraph(Graph):
 
 # endif
                 flag_cyclic = chain.get_flag_cyclic()
-                return chain.get_indices()
+                return chain.get_indices(), flag_cyclic
 
 
         face_indices = self.extract_deepest_face(flag_small_face_first)
         if face_indices and self.visited_no_node():
             flag_cyclic = True
-            return face_indices
+            print('1:', flag_cyclic, face_indices)
+            return face_indices, flag_cyclic
         
         face_constraint_count = self.count_constraints(face_indices)
         chain_indices = self.extract_deepest_chain_new()
         chain_constraint_count = self.count_constraints(chain_indices)
         if face_indices and face_constraint_count > chain_constraint_count:
             flag_cyclic = True
-            return face_indices
+            print('2:', flag_cyclic, face_indices)
+            return face_indices, flag_cyclic
         
         else:
             flag_cyclic = False
-            return chain_indices
+            print('3:', flag_cyclic, chain_indices)
+            return chain_indices, flag_cyclic
 
     def extract_deepest_face(self, flag_small_face_first):
         face_indices = []
@@ -203,7 +207,7 @@ class PlanarGraph(Graph):
         chain_min = []
         chain_max = []
         for i in range(self.num_nodes):
-            if self.get_node(i).flag_visted:
+            if self.get_node(i).flag_visited:
                 continue
 
             chain_indices = []
@@ -214,7 +218,7 @@ class PlanarGraph(Graph):
             flag_inserted = True
             while flag_inserted:
                 flag_inserted = False
-                neighbours = self.get_node(idx).get_neigbours()
+                neighbours = self.get_node(idx).neighbours
                 for j in range(len(neighbours)):
                     idx_tmp = neighbours[j]
                     if not self.get_node(idx_tmp).flag_visited:
@@ -224,9 +228,9 @@ class PlanarGraph(Graph):
                         flag_inserted = True
                         break
 
-            chain_length_tmp = int(chain_indices.size())
+            chain_length_tmp = len(chain_indices)
             # Set the visited flags back to False...
-            for j in range(len(chain_length_tmp)):
+            for j in range(chain_length_tmp):
                 self.get_node(chain_indices[j]).flag_visited = False
 
             chain_constraint_count = self.count_constraints(chain_indices)
@@ -241,3 +245,14 @@ class PlanarGraph(Graph):
                 chain_max = chain_indices
 
         return chain_min
+
+    def set_node_neighbours(self):
+        #for (int i = 0; i < int(m_nodes.size()); i++)
+        for i in range(self.num_nodes):
+            self.get_node(i).neighbours.clear()
+        #for (int i = 0; i < int(m_edges.size()); i++)
+        for i in range(len(self.edges)):
+            idx0 = self.get_edge(i).idx0
+            idx1 = self.get_edge(i).idx1
+            self.get_node(idx0).neighbours.append(idx1)
+            self.get_node(idx1).neighbours.append(idx0)

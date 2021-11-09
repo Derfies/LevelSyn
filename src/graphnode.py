@@ -14,7 +14,8 @@ class GraphNode:
             self.flag_visited = False
         if self.flag_fixed is None:
             self.flag_fixed = False
-        self.type = 0
+        if self.neighbours is None:
+            self.neighbours = []
         self.boundary_type = 0
 
     @property
@@ -40,6 +41,22 @@ class GraphNode:
     @pos.setter
     def pos(self, pos):
         self.g.nodes[self.node]['position'] = pos
+
+    @property
+    def type(self):
+        return self.g.nodes[self.node].get('type')
+
+    @type.setter
+    def type(self, type_):
+        self.g.nodes[self.node]['type'] = type_
+
+    @property
+    def neighbours(self):
+        return self.g.nodes[self.node].get('neighbours')
+
+    @neighbours.setter
+    def neighbours(self, neighbours):
+        self.g.nodes[self.node]['neighbours'] = neighbours
 
     def randomly_init_pos(self):
         self.pos = Vector2(0, 0)
