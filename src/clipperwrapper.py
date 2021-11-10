@@ -6,15 +6,8 @@ SCALING_FACTOR = 1e10
 
 
 def find_intersection(room1, room2):
-    p1 = []
-    p2 = []
-    for i in range(room1.num_vertices):
-        pi = room1.vertices[i]
-        p1.append((pi.x, pi.y))
-
-    for i in range(room2.num_vertices):
-        pi = room2.vertices[i]
-        p2.append((pi.x, pi.y))
+    p1 = [node.position for node in room1.get_nodes()]
+    p2 = [node.position for node in room2.get_nodes()]
 
     ct = pyclipper.CT_INTERSECTION
     pft = pyclipper.PFT_NONZERO
@@ -27,10 +20,10 @@ def find_intersection(room1, room2):
 
 
 def compute_collide_area(room1, room2):
-    sol = find_intersection(room1, room2)
+    solutions = find_intersection(room1, room2)
     collide_area = 0
-    for i in range(len(sol)):
-        a = pyclipper.Area(sol[i])
+    for solution in solutions:
+        a = pyclipper.Area(solution)
         collide_area += abs(convert_double_area_to_float(a))
     if collide_area < 10e-4:
         collide_area = 0

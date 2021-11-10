@@ -8,7 +8,7 @@ from reactor.geometry.vector import Vector2, Vector3, Vector4
 from reactor.geometry.orthogonalpolygon import OrthogonalPolygon
 from reactor import utils
 
-from levelconfig import LevelConfig
+from simple_settings import settings
 from clipperwrapper import compute_collide_area
 from levelmath import (
     NUMERICAL_TOLERANCE,
@@ -20,7 +20,7 @@ from levelmath import (
     sort_vec_pr,
 )
 from linebase import LineBase
-from roomedge import RoomEdge
+from room import RoomEdge, RoomEdge2
 from roomtemplates import RoomTemplates
 
 
@@ -29,62 +29,52 @@ class ConfigLine(LineBase):
     def __str__(self):
         return f'p1: {self.pos1} p2: {self.pos2}'
     
-    def randomly_sample_config_line(self):
+    def randomly_sample(self):
+
+        # TODO: Convert this to sample integers only.
         wt1 = random.random()
         wt2 = 1 - wt1
         pos = wt1 * self.pos1 + wt2 * self.pos2
         return pos
     
-    def randomly_sample_config_line_discrete(self):
+    def randomly_sample_discrete(self):
         r = random.random()
-        pos = self.pos1 if r >= 0.5 else self.pos2
-        return pos
-    
-    def config_lines_length(self):
-        return (self.pos1 - self.pos2).mag()
-    
-    def config_lines_sq_length(self):
-        return (self.pos1 - self.pos2).mag2()
-    
-    def translate_config_line(self, trans):
+        return self.pos1 if r >= 0.5 else self.pos2
+
+    def translate(self, trans):
         self.pos1 += trans
         self.pos2 += trans
 
 
 class ConfigSpace:
 
-    def __init__(self, room1=None, room2=None):
-        self.config_lines = []
-        self.precomputed_table = []
-        self.flag_precomputed = False
+    precomputed_table = []
 
-        # HAX. Not sure how the c++ gets around this.
-        # TODO: Separate constructors into functions.
+    def __init__(self, room1=None, room2=None):
+        self.lines = []
+
         if room1 is None and room2 is None:
             return
 
-        if self.flag_precomputed and room1.template_type >= 0 and room2.template_type >= 0:
+        if room1.template_type in self.precomputed_table and room2.template_type in self.precomputed_table[room1.template_type]:
             cs = self.precomputed_table[room1.template_type][room2.template_type]
             cs.translate_config_space(room1.room_centre)
-            
-            # TODO: Looks like another constructor / class method. Move to
-            # __new__
-            #*self = cs
+            self.lines = copy.deepcopy(cs)
             return
 
         # Why does 0.5 makes everything better?
-        levelconfig = LevelConfig()
-        contact_thresh = levelconfig.ROOM_CONTACT_THRESHOLD * 0.5
-        for i in range(room1.num_edges):
-            edge1 = room1.get_edge(i)
-            for j in range(room2.num_edges):
-                edge2 = room2.get_edge(j)
+        contact_thresh = settings.ROOM_CONTACT_THRESHOLD * 0.5
+
+        for edge1 in room1.get_edges():
+            for edge2 in room2.get_edges():
 
                 # Ignore edge combinations where there is no door.
+                # TODO: Define doors with lines, not with bools.
                 if not edge1.door_flag or not edge2.door_flag:
                     continue
 
-                # Ignore edges that aren't parallel.
+                # Ignore edges that aren't parallel - a room cannot be joined
+                # to another rooms except via parallel edges.
                 cross = edge1.direction3d.cross(edge2.direction3d)
                 if cross.mag2() > NUMERICAL_TOLERANCE:
                     continue
@@ -116,41 +106,21 @@ class ConfigSpace:
                         vec_pr[k] + shift,
                         vec_pr[k] - shift,
                     ))
-    #endif
-                #print('')
-                #print('before:')
-                #for d in vec_pr:
-                #    print('    ->', d)
                 sort_vec_pr(vec_pr)
-                #print('after:')
-                #for d in vec_pr:
-                #    print('    ->', d)
-                #print('')
+
+                # Iterate this sample point and the next sample point along the
+                # line.
                 for k in range(len(vec_pr)):
                     pr1 = vec_pr[k]
                     pr2 = vec_pr[k - 1]
-
-                    #print('->', pr1, pr2)
 
                     # Ignore if the two points are coincident.
                     if (pr2 - pr1).mag2() < NUMERICAL_TOLERANCE:
                         continue
                     pr3 = (pr1 + pr2) * 0.5
 
-                    # for sample_point in (pr1, pr2, pr3):
-                    #     sample_room = copy.deepcopy(room2)
-                    #     sample_room.translate_room(sample_point)
-                    #
-                    #     # TODO: Could replace with touches / intersects?
-                    #     # Need to make rooms derive from orthogonal poly first.
-                    #     if compute_collide_area(room1, sample_room):#> NUMERICAL_TOLERANCE:
-                    #         print('FOUND OVERLAP')
-                    #         continue
-                    #     if room_contact(room1, sample_room) < contact_thresh - NUMERICAL_TOLERANCE:
-                    #         print('FOUND contact')
-                    #         continue
                     room2n1 = copy.deepcopy(room2)
-                    room2n1.translate_room(pr1)
+                    room2n1.translate(pr1)
 
                     # TODO: Could replace with touches / intersects?
                     if compute_collide_area(room1, room2n1):# > NUMERICAL_TOLERANCE:
@@ -160,7 +130,7 @@ class ConfigSpace:
                         continue
                     # endif
                     room2n2 = copy.deepcopy(room2)
-                    room2n2.translate_room(pr2)
+                    room2n2.translate(pr2)
                     if compute_collide_area(room1, room2n2):# > NUMERICAL_TOLERANCE:
                         continue
                     # ifdef ACCURATE_CONFIG_SPACE
@@ -168,7 +138,7 @@ class ConfigSpace:
                         continue
                     # endif
                     room2n3 = copy.deepcopy(room2)
-                    room2n3.translate_room(pr3)
+                    room2n3.translate(pr3)
                     if compute_collide_area(room1, room2n3):# > NUMERICAL_TOLERANCE:
                         continue
                     # ifdef ACCURATE_CONFIG_SPACE
@@ -176,25 +146,20 @@ class ConfigSpace:
                         continue
                     # endif
 
-                    pos1 = room2.get_room_centre() + pr1
-                    pos2 = room2.get_room_centre() + pr2
-                    line = ConfigLine(pos1, pos2)
-                    #print('adding:', line)
-                    self.config_lines.append(line)
-
-        # for line in self.config_lines:
-        #     print('line:', line.pos1.x, line.pos1.y, line.pos2.x, line.pos2.y)
+                    pos1 = room2.get_centre() + pr1
+                    pos2 = room2.get_centre() + pr2
+                    self.lines.append(ConfigLine(pos1, pos2))
 
         self.merge()
 
     @property
     def num_lines(self):
-        return len(self.config_lines)
+        return len(self.lines)
 
     def __str__(self):
         str_ = f'ConfigSpace with {self.num_lines} lines\n'
         for i in range(self.num_lines):
-            str_ += f'    {i}th line: {self.config_lines[i]}\n'
+            str_ += f'    {i}th line: {self.lines[i]}\n'
         return str_
 
     def randomly_sample_config_space(self):
@@ -203,43 +168,44 @@ class ConfigSpace:
 
     def randomly_sample_config_space_continuous(self):
         line_index = random.randint(0, self.num_lines - 1)
-        return self.config_lines[line_index].randomly_sample_config_line()
+        return self.lines[line_index].randomly_sample()
 
     def randomly_sample_config_space_discrete(self):
         line_index = random.randint(0, self.num_lines - 1)
-        return self.config_lines[line_index].randomly_sample_config_line_discrete()
+        return self.lines[line_index].randomly_sample_discrete()
 
     def smartly_sample_config_space(self):
         positions = []
-        for config_line in self.config_lines:
+        for config_line in self.lines:
             r = random.random()
-            pos = config_line.randomly_sample_config_line() if r >= 0.5 else config_line.randomly_sample_config_line_discrete()
+            pos = config_line.randomly_sample() if r >= 0.5 else config_line.randomly_sample_discrete()
             positions.append(pos)
         return positions
 
     @classmethod
     def find_intersection(cls, config_space1, config_space2):
         intersect_space = cls()
-        for i1 in range(config_space1.num_lines):
-            config_line1 = config_space1.config_lines[i1]
-            for i2 in range(config_space2.num_lines):
-                config_line2 = config_space2.config_lines[i2]
-                
-                if config_line1.config_lines_sq_length() < NUMERICAL_TOLERANCE_SQ and config_line2.config_lines_sq_length() < NUMERICAL_TOLERANCE_SQ:
+        for config_line1 in config_space1.lines:
+            for config_line2 in config_space2.lines:
+
+                # Neither line has any length...
+                if config_line1.sq_length < NUMERICAL_TOLERANCE_SQ and config_line2.sq_length < NUMERICAL_TOLERANCE_SQ:
                     if (config_line1.pos1 - config_line2.pos1).mag2() < NUMERICAL_TOLERANCE_SQ:
-                        intersect_space.config_lines.append(config_line1)
+                        intersect_space.lines.append(config_line1)
                     continue
-                    
-                elif config_line1.config_lines_sq_length() < NUMERICAL_TOLERANCE_SQ:
-                    edge = RoomEdge(config_line2.pos1, config_line2.pos2)
+
+                # 1st line has no length, test to see if it sits on the line
+                elif config_line1.sq_length < NUMERICAL_TOLERANCE_SQ:
+                    edge = RoomEdge2(config_line2.pos1, config_line2.pos2)
                     if point_to_segment_sq_distance(config_line1.pos1, edge) < NUMERICAL_TOLERANCE_SQ:
-                        intersect_space.config_lines.append(config_line1)
+                        intersect_space.lines.append(config_line1)
                     continue
-                    
-                elif config_line2.config_lines_sq_length() < NUMERICAL_TOLERANCE_SQ:
-                    edge = RoomEdge(config_line1.pos1, config_line1.pos2)
+
+                # 2nd line has no length, test to see if it sits on the line
+                elif config_line2.sq_length < NUMERICAL_TOLERANCE_SQ:
+                    edge = RoomEdge2(config_line1.pos1, config_line1.pos2)
                     if point_to_segment_sq_distance(config_line2.pos1, edge) < NUMERICAL_TOLERANCE_SQ:
-                        intersect_space.config_lines.append(config_line2)
+                        intersect_space.lines.append(config_line2)
                     continue
 
                 p11 = config_line1.pos1
@@ -252,24 +218,20 @@ class ConfigSpace:
                 if cp.mag2() > NUMERICAL_TOLERANCE:
                     
                     # Not parallel...
+                    # The resulting intersection line is a single point where
+                    # the lines intersect.
                     flag_intersect, pi = segment_intersection(p11, p12, p21, p22)
                     if flag_intersect:
                         intersect_line = ConfigLine(pi)
-                        intersect_space.config_lines.append(intersect_line)
+                        intersect_space.lines.append(intersect_line)
 
                 else:
 
                     # Parallel...
-                    # pos_min1 = min_union(p11, p12)
-                    # pos_max1 = max_union(p11, p12)
-                    # pos_min2 = min_union(p21, p22)
-                    # pos_max2 = max_union(p21, p22)
-
                     pos_min1 = p11.minimum(p12)
                     pos_max1 = p11.maximum(p12)
                     pos_min2 = p21.minimum(p22)
                     pos_max2 = p21.maximum(p22)
-
 
                     flag_overlap = True
                     for j in range(2):
@@ -294,7 +256,7 @@ class ConfigSpace:
                         p2[d] = min(max(p11[d], p12[d]), max(p21[d], p22[d]))
 
                     intersect_line = ConfigLine(p1, p2)
-                    intersect_space.config_lines.append(intersect_line)
+                    intersect_space.lines.append(intersect_line)
 
         return intersect_space
 
@@ -302,27 +264,35 @@ class ConfigSpace:
     def find_union(cls, config_space, config_line):
 
         # TODO: Not sure about this one...
+
+        # If there are no lines, return a config space containing just the given
+        # line.
         config_space_new = copy.deepcopy(config_space)
-        if not config_space.config_lines:
-            config_space_new.config_lines.append(config_line)
+        if not config_space.lines:
+            config_space_new.lines.append(config_line)
             return config_space_new
 
         merge_flag = False
         for i in range(config_space.num_lines):
-            line = config_space_new.config_lines[i]
-            edge1 = RoomEdge(line.pos1, line.pos2)
-            edge2 = RoomEdge(config_line.pos1, config_line.pos2)
+            line = config_space_new.lines[i]
+            edge1 = RoomEdge2(line.pos1, line.pos2)
+            edge2 = RoomEdge2(config_line.pos1, config_line.pos2)
             sq_length1 = edge1.sq_length
             sq_length2 = edge2.sq_length
 
+            # If the two edges have length...
             if sq_length1 >= NUMERICAL_TOLERANCE and sq_length2 >= NUMERICAL_TOLERANCE:
+
+                # Only parallel lines can be merged.
                 cross = edge1.direction3d.cross(edge2.direction3d)
                 if cross.mag2() > NUMERICAL_TOLERANCE:
                     continue
 
+            # Only a line with length can be merged.
             elif sq_length1 < NUMERICAL_TOLERANCE and sq_length2 > NUMERICAL_TOLERANCE:
                 continue
 
+            # If neither line has length, ignore unless..????
             elif sq_length1 < NUMERICAL_TOLERANCE and sq_length2 < NUMERICAL_TOLERANCE:
                 if (edge1.pos1 - edge2.pos1).mag2() < NUMERICAL_TOLERANCE:
                     merge_flag = True
@@ -354,8 +324,10 @@ class ConfigSpace:
                 merge_flag = True
                 break
 
+        # Merge the line in if one of the existing lines cannot be altered to
+        # include its range.
         if not merge_flag:
-            config_space_new.config_lines.append(config_line)
+            config_space_new.lines.append(config_line)
 
         return config_space_new
 
@@ -364,36 +336,30 @@ class ConfigSpace:
         # TODO: Reimplement this.
         #sort(self.config_lines.begin(), self.config_lines.end(), self.compare_config_line_length)
         config_space_new = ConfigSpace()
-        for config_line in self.config_lines:
+        for config_line in self.lines:
             config_space_new = ConfigSpace.find_union(config_space_new, config_line)
-        self.config_lines = config_space_new.config_lines
+        self.lines = config_space_new.lines
 
     def get_config_space_size(self):
-        sz = 0
-        for config_line in self.config_lines:
-            sz += config_line.config_lines_length()
-        return sz
+        return sum([line.length for line in self.lines])
 
     def translate_config_space(self, trans):
-        for config_line in self.config_lines:
-            config_line.translate_config_line(trans)
+        for config_line in self.lines:
+            config_line.translate(trans)
 
     @staticmethod
     def compare_config_line_length(line1, line2):
-        return line1.config_lines_sq_length() > line2.config_lines_sq_length()
+        return line1.sq_length > line2.sq_length
 
-    def precompute_table(self, rooms):
-        self.flag_precomputed = False
-        self.precomputed_table.clear()
-        num_rooms = len(rooms)
-        for i in range(num_rooms):
+    @classmethod
+    def precompute_table(cls, rooms):
+        cls.precomputed_table.clear()
+        for room in rooms:
             config_spaces = []
-            room1 = rooms[i]
-            room1.translate_room(-room1.get_room_centre())
-            for j in range(num_rooms):
-                config_spaces.append(ConfigSpace(room1, rooms[j]))
-            self.precomputed_table.append(config_spaces)
-        self.flag_precomputed = True
+            room.translate(-room.get_centre())
+            for other_room in rooms:
+                config_spaces.append(ConfigSpace(room, other_room))
+            cls.precomputed_table.append(config_spaces)
 
 
 if __name__ == '__main__':
@@ -474,36 +440,40 @@ if __name__ == '__main__':
 
     '''
     roomtemplates = RoomTemplates()
-    roomtemplates.load(r'C:\Users\Jamie Davies\Documents\git\LevelSyn\data\building_blocks_fig1.xml')
+    roomtemplates.load(r'C:\Users\Jamie Davies\OneDrive\Documents\git\LevelSyn\data\building_blocks_fig1.xml')
     g = nx.Graph()
     for i, room in enumerate(roomtemplates.rooms):
-        vertices = []
-        for v in room.vertices:
-            vertices.append(v + Vector2(i, 0))
-        p = OrthogonalPolygon.from_positions(vertices)
-        g = nx.compose(g, p)
+        #vertices = []
+        #for v in room.vertices:
+        #    vertices.append(v + Vector2(i, 0))
+        room.translate(Vector2(i, 0))
+        #p = OrthogonalPolygon.from_positions(vertices)
+        g = nx.compose(g, room)
 
+    ConfigSpace.precompute_table(roomtemplates.rooms)
     cs = ConfigSpace()
-    cs.precompute_table(roomtemplates.rooms)
 
     import os
     from reactor.geometry.orthogonalpolygon import OrthogonalPolygon
 
     m = 0
-    dir_name = r'C:\Users\Jamie Davies\Documents\git\reactor\output\debug'
-
+    dir_name = r'C:\Users\Jamie Davies\OneDrive\Documents\git\LevelSyn\debug'
 
     for i, spaces in enumerate(roomtemplates.rooms):
-
         for j, space in enumerate(cs.precomputed_table[i]):
 
             g = nx.Graph()
-            r1 = OrthogonalPolygon.from_positions(list(reversed(roomtemplates.rooms[i].vertices)))
+            vertices = []
+            for node in roomtemplates.rooms[i].get_nodes():
+                vertices.append(node.position)
+            r1 = OrthogonalPolygon.from_positions(list(reversed(vertices)))
             g = nx.compose(g, r1)
 
             vertices = []
-            for v in roomtemplates.rooms[j].vertices:
-                vertices.append(v + Vector2(1, 0))
+            # for v in roomtemplates.rooms[j].vertices:
+            #     vertices.append(v + Vector2(0, 10))
+            for node in roomtemplates.rooms[j].get_nodes():
+                vertices.append(node.position + Vector2(0, 10))
             r2 = OrthogonalPolygon.from_positions(list(reversed(vertices)))
             #for node in r2:
                 # print('before:', r2.nodes[node]['position'])
@@ -511,10 +481,10 @@ if __name__ == '__main__':
                 # print('after:', r2.nodes[node]['position'])
             g = nx.compose(g, r2)
 
-            for line in space.config_lines:
+            for line in space.lines:
                 p = OrthogonalPolygon.from_positions([line.pos1, line.pos2])
-                # for node in p:
-                #     p.node['position'] += Vector2(2, 0)
+                for node in p.nodes:
+                    p.nodes[node]['position'] += Vector2(0, 0)
                 g = nx.compose(g, p)
 
             file_name = '{0:03d}'.format(m)

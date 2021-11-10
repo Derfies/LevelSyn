@@ -1,18 +1,69 @@
 import math
 
-from reactor.geometry.vector import Vector2
-from roomedge import RoomEdge
+from reactor.geometry.vector import Vector2, Vector3
+from reactor.geometry.orthogonalpolygon import OrthogonalPolygon, Edge
+from reactor.const import POSITION
+
+from linebase import LineBase
 
 
-class Room:
+class RoomMixin:
+
+    # TODO: Reintegrate LineBase class.
+
+    def __str__(self):
+        return f'RoomEdge: {self.pos1} {self.pos2}'
+
+    @property
+    def length(self):
+        return (self.pos2 - self.pos1).mag()
+
+    @property
+    def sq_length(self):
+        return (self.pos2 - self.pos1).mag2()
+
+    @property
+    def door_flag(self):
+        return self._g.edges[self._edge]['door_flag']
+
+    @door_flag.setter
+    def door_flag(self, value):
+        self._g.edges[self._edge]['door_flag'] = value
+
+    @property
+    def direction(self):
+        return self.pos2 - self.pos1
+
+    @property
+    def direction3d(self):
+        direction = self.direction
+        return Vector3(direction[0], direction[1], 0)
+
+
+class RoomEdge(RoomMixin, Edge):
+
+    # TODO: Core code still assumes standalone room edge class.... :S
+    pass
+
+
+class RoomEdge2(RoomMixin):
+
+    def __init__(self, pos1, pos2):
+        self.pos1 = pos1
+        self.pos2 = pos2
+
+
+
+class Room(OrthogonalPolygon):
+
+    edge_cls = RoomEdge
     
     def __init__(self):
-        self.template_type = -1
+        super().__init__()
+        self.template_type = None
         self.flag_fixed = False
         self.boundary_type = 0
-        self.vertices = []
         self.walls = []
-        self.door_flags = []
         self.centre_shift = Vector2(0, 0)
         self.energy = 1
         self.reset_energy()
@@ -20,11 +71,11 @@ class Room:
 
     @property
     def num_vertices(self):
-        return len(self.vertices)
+        return self.number_of_nodes()
 
     @property
     def num_edges(self):
-        return len(self.vertices)
+        return self.number_of_edges()
 
     @property
     def num_walls(self):
@@ -36,38 +87,40 @@ class Room:
             str_ += f'    {i}th vertex: {vertex}\n'
         return str_
 
-    def get_edge(self, idx):
-        idx1 = idx
-        idx2 = (idx + 1) % self.num_vertices
-        edge = RoomEdge(self.vertices[idx1], self.vertices[idx2]) 
-        edge.idx1 = idx1
-        edge.idx2 = idx2
-        #print(self.num_of_edges, self.door_flags)
-        edge.door_flag = self.door_flags[idx]
-        return edge
+    def get_bounding_box(self):
+        # p_min = Vector2(1e10, 1e10)
+        # p_max = Vector2(-1e10, -1e10)
+        # for i in range(self.num_vertices):
+        #     pi = self.vertices[i]
+        #     for j in range(2):
+        #         p_min[j] = min(p_min[j], pi[j])
+        #         p_max[j] = max(p_max[j], pi[j])
+        # return p_min, p_max
+        xs, ys = [], []
+        for node in self.get_nodes():
+            xs.append(node.position[0])
+            ys.append(node.position[1])
+        min_pos = Vector2(min(xs), min(ys))
+        max_pos = Vector2(max(xs), max(ys))
+        return min_pos, max_pos
     
-    def get_room_centre(self):
-        centre = Vector2(0, 0)
-        if not self.num_vertices:
-            return centre
-
-        # TODO: min / max can take a list.
-        pos_min = Vector2(1e10, 1e10)
-        pos_max = Vector2(-1e10, -1e10)
-        for i in range(self.num_vertices):
-            pi = self.vertices[i]
-            for j in range(2):
-                pos_min[j] = min(pos_min[j], pi[j])
-                pos_max[j] = max(pos_max[j], pi[j])
-    
-        return (pos_min + pos_max) * 0.5
+    def get_centre(self):
+        # xs, ys = [], []
+        # for node in self.get_nodes():
+        #     xs.append(node.position[0])
+        #     ys.append(node.position[1])
+        # min_pos = Vector2(min(xs), min(ys))
+        # max_pos = Vector2(max(xs), max(ys))
+        # return (min_pos + max_pos) * 0.5
+        min_pos, max_pos = self.get_bounding_box()
+        return (min_pos + max_pos) * 0.5
     
     def get_shifted_room_centre(self):
-        return self.get_room_centre() + self.centre_shift
+        return self.get_centre() + self.centre_shift
     
-    def translate_room(self, trans):
-        for i in range(self.num_vertices):
-            self.vertices[i] += trans
+    def translate(self, trans):
+        for node in self.nodes:
+            self.nodes[node][POSITION] += trans
     
     def rotate_room(self, rad):
         cv = math.cos(rad)
@@ -84,21 +137,11 @@ class Room:
         self.centre_shift[1] = -p0 * sv + p1 * cv
     
     def scale_room(self, scaling):
-        centre = self.get_room_centre()
+        centre = self.get_centre()
         for i in range(self.num_vertices):
             pi = self.vertices[i] - centre
             self.vertices[i] = centre + pi * scaling
         self.centre_shift = self.centre_shift * scaling
-    
-    def get_room_bounding_box(self):
-        p_min = Vector2(1e10, 1e10)
-        p_max = Vector2(-1e10, -1e10)
-        for i in range(self.num_vertices):
-            pi = self.vertices[i]
-            for j in range(2):
-                p_min[j] = min(p_min[j], pi[j])
-                p_max[j] = max(p_max[j], pi[j])
-        return p_min, p_max
     
     # def get_room_bounding_box(self, bounding_box):
     #     pos_min, pos_max = Vector2(0, 0), Vector2(0, 0)

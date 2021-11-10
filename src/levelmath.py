@@ -64,10 +64,12 @@ def room_perimeter(room1):
 
 def room_contact(room1, room2):
     contact_area = 0
-    for i in range(room1.num_edges):
-        edge1 = room1.get_edge(i)
-        for j in range(room2.num_edges):
-            edge2 = room2.get_edge(j)
+    # for i in range(room1.num_edges):
+    #     edge1 = room1.get_edge(i)
+    #     for j in range(room2.num_edges):
+    #         edge2 = room2.get_edge(j)
+    for edge1 in room1.get_edges():
+        for edge2 in room2.get_edges():
             if not edge1.door_flag or not edge2.door_flag:
                 print('    bail bc one is not edge')
                 continue
@@ -134,11 +136,9 @@ def edge_contact(line1, line2):
 
 def room_distance(room1, room2):
     d = 1e10
-    for i in range(room1.num_vertices):
-        pt = room1.vertices[i]
-        for j in range(room2.num_edges):
-            edge = room2.get_edge(j)
-            d_tmp = point_to_segment_sq_distance(pt, edge)
+    for node in room1.get_nodes():
+        for edge in room2.get_edges():
+            d_tmp = point_to_segment_sq_distance(node.position, edge)
             d = min(d, d_tmp)
     return math.sqrt(d)
 

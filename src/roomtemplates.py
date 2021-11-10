@@ -26,34 +26,42 @@ class RoomTemplates:
         tree = et.parse(file_path)
         xml_root = tree.getroot()
         for xml_node in xml_root.findall('Room'):
-
-            room = Room()
+            vertices = []
+            centre_shift = None
+            boundary_type = None
             door_positions = []
             for xml_child_node in xml_node:
                 if xml_child_node.tag == 'Vertex':
                     px = xml_child_node.get('px')
                     py = xml_child_node.get('py')
                     pos = Vector2(float(px), float(py))
-                    room.vertices.append(pos)
+                    vertices.append(pos)
                 elif xml_child_node.tag == 'Shift':
                     px = xml_child_node.get('px')
                     py = xml_child_node.get('py')
                     pos = Vector2(float(px), float(py))
-                    room.centre_shift = pos
+                    centre_shift = pos
                 elif xml_child_node.tag == 'Boundary':
                     btype = int(xml_child_node.get('type'))
-                    room.boundary_type = btype
+                    boundary_type = btype
                 elif xml_child_node.tag == 'Door':
                     idx = int(xml_child_node.get('edgeIndex'))
                     door_positions.append(idx)
 
+            room = Room.from_positions(vertices)
+            room.centre_shift = centre_shift
+            room.boundary_type = boundary_type
+            room.door_positions = door_positions
             room.reset_door_flags()
             # if door_positions:
             #     for door_position in door_positions:
             #         room.set_door_flag(door_position, True)
 
-            for i in range(len(room.vertices)):
-                room.set_door_flag(i, True)
+            # HAXXOR set all edges as having doors for the moment.
+            #for i in range(len(room.vertices)):
+            #    room.set_door_flag(i, True)
+            for edge in room.get_edges():
+                edge.door_flag = True
 
             self.rooms.append(room)
 

@@ -7,10 +7,10 @@ from functools import cmp_to_key
 import networkx as nx
 import numpy as np
 from dataclasses import dataclass
+from simple_settings import settings
 
 from clipperwrapper import compute_collide_area
 from configspace import ConfigSpace
-from levelconfig import LevelConfig
 from roomlayout import RoomLayout
 from reactor import utils
 from reactor.geometry.vector import Vector2
@@ -83,7 +83,7 @@ class CurrentState:
     def insert_to_new_states(self, new_states, graph):
 
         # WARNING - Set to zero here
-        state_diff_thresh = LevelConfig().STATE_DIFFERENCE_THRESHOLD
+        state_diff_thresh = settings.STATE_DIFFERENCE_THRESHOLD
         if state_diff_thresh <= 0:
             print('    added state:', self)
             new_states.append(self)
@@ -123,16 +123,21 @@ class LevelSynth:
 
     def draw_layout(self, layout, i, sfx=None, debug=False):
         g = nx.DiGraph()
-        for room in layout.rooms:
+        for j, room in enumerate(layout.rooms):
             tmp_g = nx.DiGraph()
-            for e in range(room.num_edges):
-                e = room.get_edge(e)
-                a, b = room.vertices[e.idx1], room.vertices[e.idx2]
-                head, tail = str(a), str(b)
+            for k, edge in enumerate(room.get_edges()):
+
+            # for e in range(room.num_edges):
+            #     e = room.get_edge(e)
+                #a, b = room.vertices[e.idx1], room.vertices[e.idx2]
+                #head, tail = str(a), str(b)
+                head = f'{j}{k}0'
+                tail = f'{j}{k}1'
                 tmp_g.add_edge(head, tail)
-                tmp_g.nodes[head]['position'] = a
-                tmp_g.nodes[tail]['position'] = b
-            g = nx.compose(g, tmp_g)
+                tmp_g.nodes[head]['position'] = edge.pos1
+                tmp_g.nodes[tail]['position'] = edge.pos2
+                g = nx.compose(g, tmp_g)
+
 
 
         #g = nx.compose(g, self.graph)
@@ -150,7 +155,7 @@ class LevelSynth:
         self.solution_count = 0
         self.best_sol_count = 0
         graph.move_graph_to_scene_centre()
-        graph.scale_graph_node_positions(LevelConfig().GRAPH_SCALING)
+        graph.scale_graph_node_positions(settings.GRAPH_SCALING)
         self.set_graph(graph)
         self.templates = templates
         self.graph.num_types = self.templates.num_templates
@@ -225,9 +230,9 @@ class LevelSynth:
             idx = self.graph.get_node(i).type % num_templates
             room = self.templates.rooms[idx]
             pi = self.graph.get_node_pos(i)
-            c = room.get_room_centre()
+            c = room.get_centre()
             trans = pi - c
-            room.translate_room(trans)
+            room.translate(trans)
             self.layout.rooms.append(copy.deepcopy(room))
 
     def get_layout(self, graph, room_positions):
@@ -239,9 +244,9 @@ class LevelSynth:
             idx = idx % num_templates
             room = copy.deepcopy(self.templates.rooms[idx])
             pi = room_positions[i]
-            c = room.get_room_centre()
+            c = room.get_centre()
             trans = pi - c
-            room.translate_room(trans)
+            room.translate(trans)
             room.flag_fixed = graph.get_node(i).flag_fixed
             layout.rooms.append(room)
 
@@ -254,7 +259,7 @@ class LevelSynth:
     def update_graph_from_layout(self):
         num_rooms = self.graph.num_nodes
         for i in range(num_rooms):
-            room_centre = self.layout.rooms[i].get_room_centre()
+            room_centre = self.layout.rooms[i].get_centre()
             self.graph.get_node(i).pos = room_centre
     #
     # def PostProcessing(self, layout, graph):
@@ -554,7 +559,7 @@ class LevelSynth:
         state0.state_energy = 1e10
         state_stack = []
         state_stack.insert(0, state0)
-        target_num_solutions = LevelConfig().TARGET_NUM_SOLUTIONS
+        target_num_solutions = settings.TARGET_NUM_SOLUTIONS
         energy_min = 1e10
         layout_best = self.layout
         num_partials = 0
@@ -588,20 +593,20 @@ class LevelSynth:
             self.x += 1
             self.flag_visited_no_node = self.graph.visited_no_node()
             #flag_cyclic = False
-            tmp_indices, flag_cyclic = self.graph.extract_deepest_face_or_chain(LevelConfig().FLAG_SMALL_FACE_FIRST)
+            tmp_indices, flag_cyclic = self.graph.extract_deepest_face_or_chain(settings.FLAG_SMALL_FACE_FIRST)
             #tmp_indices = index_sets[index_index]
             #index_index += 1
             print('tmp_indices:', tmp_indices)
             #indices = []
     #if 0 # Before 09/03/2013
-            # if LevelConfig().SYNTHESIS_METHOD != 0 :
+            # if settings.SYNTHESIS_METHOD != 0 :
             #     # Select all the graph nodes...
             #     indices.resize(self.graph.num_nodes)
             #     for i in range(len(indices)):
             #         indices[i] = i
     #else:
             indices = old_state.my_indices[:]
-            if LevelConfig().SYNTHESIS_METHOD != 0:
+            if settings.SYNTHESIS_METHOD != 0:
                 if not self.graph.has_fixed_node() or not self.graph.visited_no_node():
                     indices = self.graph.get_unfixed_nodes()
 
@@ -714,7 +719,7 @@ class LevelSynth:
     #endif
     #
     def solve_1d_chain(self, indices, weighted_indices, old_state, new_states):
-        if LevelConfig().FLAG_USE_ILS:
+        if settings.FLAG_USE_ILS:
             return self.solve_1d_chainILS(indices, old_state, new_states)
     #
     #     graph = old_state.state_graph
@@ -1049,12 +1054,12 @@ class LevelSynth:
             return True
 
         # Borrow the parameters from simulated annealing...
-        # n = LevelConfig().SA_NUM_OF_CYCLES
-        # m = LevelConfig().SA_NUM_OF_TRIALS
+        # n = settings.SA_NUM_OF_CYCLES
+        # m = settings.SA_NUM_OF_TRIALS
 
         energy_min = 1e10
         energy_history = 1e10
-        for i in range(LevelConfig().SA_NUM_OF_CYCLES):
+        for i in range(settings.SA_NUM_OF_CYCLES):
             layout_history = self.layout
             graph_history = graph
             if i != 0:
@@ -1068,7 +1073,7 @@ class LevelSynth:
                 energy_min = energy_current
                 #print(f'Initial energy: {energy_current}')
 
-            for j in range(LevelConfig().SA_NUM_OF_TRIALS):
+            for j in range(settings.SA_NUM_OF_TRIALS):
                 graph_tmp = graph
                 layout_tmp = copy.copy(self.layout)
                 self.randomly_adjust_one_room(layout_tmp, graph_tmp, indices, None)
@@ -1078,14 +1083,14 @@ class LevelSynth:
                     p_max = Vector2(-1e10, -1e10)
                     for d in range(len(indices)):
                         idx = indices[d]
-                        pj = layout_tmp.rooms[idx].get_room_centre()
+                        pj = layout_tmp.rooms[idx].get_centre()
                         for k in range(2):
                             p_min[k] = min(p_min[k], pj[k])
                             p_max[k] = max(p_max[k], pj[k])
                     pos_cen = (p_min + p_max) * 0.5
                     for d in range(len(indices)):
                         idx = indices[d]
-                        layout_tmp.rooms[idx].translate_room(-pos_cen)
+                        layout_tmp.rooms[idx].translate(-pos_cen)
     #endif
                 energy_tmp, collide_area, connectivity = self.get_layout_energy(layout_tmp, graph_tmp)
                 #print(f'energy_tmp 2: {energy_tmp}', collide_area, connectivity)
@@ -1135,7 +1140,7 @@ class LevelSynth:
         print(f'Number of valid states: {len(new_states)}')
 
         new_states.sort(key=cmp_to_key(self.compare_state_energy_smaller_first))
-        num_solutions_to_track = min(len(new_states), LevelConfig().NUMBER_OF_SOLUTIONS_TO_TRACK)
+        num_solutions_to_track = min(len(new_states), settings.NUMBER_OF_SOLUTIONS_TO_TRACK)
         newer_states = []
         for i in range(num_solutions_to_track):
             newer_states.append(new_states[i])
@@ -1249,9 +1254,9 @@ class LevelSynth:
         # 
         # elif  r < 0.75 or not FLAG_ENABLE_TYPE_CHANGE:
 #else:
-        if r < 0.75 or not LevelConfig().FLAG_ENABLE_TYPE_CHANGE: # nv: was 0.9
+        if r < 0.75 or not settings.FLAG_ENABLE_TYPE_CHANGE: # nv: was 0.9
  #endif
-            if not LevelConfig().FLAG_RANDOM_WALK:
+            if not settings.FLAG_RANDOM_WALK:
                 return self.randomly_adjust_one_room03(layout, graph, indices, weighted_indices)
             else:
                 return self.gradient_descent_one_room(layout, graph, *weighted_indices)
@@ -1423,7 +1428,7 @@ class LevelSynth:
                 print('i:', i, connected_indices[i], config_space)
                 config_space_tmp = ConfigSpace(layout.rooms[connected_indices[i]], picked_room)
                 config_space_new = ConfigSpace.find_intersection(config_space, config_space_tmp)
-                if not config_space_new.config_lines:
+                if not config_space_new.lines:
                     #continue
                     #print('BREAK')
                     #config_space = ConfigSpace()
@@ -1434,9 +1439,9 @@ class LevelSynth:
             print('result:', config_space)
 
         while_cnt = 0
-        if not config_space.config_lines:
+        if not config_space.lines:
             print('        no result.. randomly pick another one!')
-        while not config_space.config_lines:
+        while not config_space.lines:
             other_room_index = self.randomly_pick_another_room(layout, picked_room_index)
             other_room = layout.rooms[other_room_index]
             config_space = ConfigSpace(other_room, picked_room)
@@ -1446,9 +1451,9 @@ class LevelSynth:
                 return
 
         pos = config_space.randomly_sample_config_space()
-        dp = pos - picked_room.get_room_centre()
+        dp = pos - picked_room.get_centre()
         print('        move:', picked_room_index, dp)
-        picked_room.translate_room(dp)
+        picked_room.translate(dp)
 
     def randomly_adjust_one_room04(self, layout, graph, indices, weighted_indices):
         num_templates = self.templates.num_templates
@@ -1476,10 +1481,10 @@ class LevelSynth:
 
         graph.get_node(picked_room_index).type = type_new
         room = copy.deepcopy(self.templates.rooms[type_new])
-        p1 = room.get_room_centre()
-        p2 = picked_room.get_room_centre()
+        p1 = room.get_centre()
+        p2 = picked_room.get_centre()
         dp = p2 - p1
-        room.translate_room(dp)
+        room.translate(dp)
         #picked_room = room
         layout.rooms[picked_room_index] = room
 #if 1 # New on 09/15/2013
@@ -1516,21 +1521,21 @@ class LevelSynth:
     def get_layout_energy(self, layout, graph, room_moved=-1, do_contact=False, indices=None):
         layout.reset_room_energies()
         layout_energy = 1.0
-        if LevelConfig().SIGMA_COLLIDE > 0:
+        if settings.SIGMA_COLLIDE > 0:
             collide_area = self.layout_collide(layout, graph, True, room_moved)
-            layout_energy *= math.exp(collide_area * LevelConfig().SIGMA_COLLIDE)
+            layout_energy *= math.exp(collide_area * settings.SIGMA_COLLIDE)
 
-        if LevelConfig().SIGMA_CONNECTIVITY > 0:
+        if settings.SIGMA_CONNECTIVITY > 0:
             connectivity = self.check_room_connectivity(layout, graph, True, room_moved)
-            #layout_energy *= math.exp(connectivity * LevelConfig().SIGMA_CONNECTIVITY)
-            layout_energy *= np.exp(connectivity * LevelConfig().SIGMA_CONNECTIVITY)
+            #layout_energy *= math.exp(connectivity * settings.SIGMA_CONNECTIVITY)
+            layout_energy *= np.exp(connectivity * settings.SIGMA_CONNECTIVITY)
 
-        # if LevelConfig().SIGMA_CONTACT > 0 and do_contact:
-        #     contact_area = -self.layout_contact(layout, graph, True, LevelConfig().FLAG_NON_OVERLAP_CONTACT, indices)
+        # if settings.SIGMA_CONTACT > 0 and do_contact:
+        #     contact_area = -self.layout_contact(layout, graph, True, settings.FLAG_NON_OVERLAP_CONTACT, indices)
         #     if contact_area >= 0.0:
         #         contact_area = 0.0
         #     if contact_area < 0:
-        #         layout_energy *= math.exp(contact_area / LevelConfig().SIGMA_CONTACT)
+        #         layout_energy *= math.exp(contact_area / settings.SIGMA_CONTACT)
 
         return layout_energy, collide_area, connectivity
 
@@ -1557,13 +1562,13 @@ class LevelSynth:
 
             if room_moved == -1 or room_moved == idx0 or room_moved == idx1 or layout.cached_connectivities.find((idx0, idx1)) == layout.cached_connectivities.end():
                 contact_area = room_contact(layout.rooms[idx0], layout.rooms[idx1])
-                if contact_area <= LevelConfig().ROOM_CONTACT_THRESHOLD:
-                    if LevelConfig().FLAG_DISCRETE_CONNECTIVITY_FUNCTION:
+                if contact_area <= settings.ROOM_CONTACT_THRESHOLD:
+                    if settings.FLAG_DISCRETE_CONNECTIVITY_FUNCTION:
                         connectivity += 1
                         layout.cached_connectivities[(idx0, idx1)] = 1
                     else:
                         d = room_distance(layout.rooms[idx0], layout.rooms[idx1])
-                        d += LevelConfig().ROOM_CONTACT_THRESHOLD
+                        d += settings.ROOM_CONTACT_THRESHOLD
                         layout.cached_connectivities[(idx0, idx1)] = d
                         connectivity += d
                     factor = 1.1
@@ -1637,8 +1642,8 @@ class LevelSynth:
         collide_area = -1
 
         # Test the bounding box first...
-        bb1 = AABB2(*room1.get_room_bounding_box())
-        bb2 = AABB2(*room2.get_room_bounding_box())
+        bb1 = AABB2(*room1.get_bounding_box())
+        bb2 = AABB2(*room2.get_bounding_box())
         if not self.test_bounding_box_collides(bb1, bb2):
             return 0.0
 
