@@ -64,17 +64,12 @@ def room_perimeter(room1):
 
 def room_contact(room1, room2):
     contact_area = 0
-    # for i in range(room1.num_edges):
-    #     edge1 = room1.get_edge(i)
-    #     for j in range(room2.num_edges):
-    #         edge2 = room2.get_edge(j)
     for edge1 in room1.get_edges():
         for edge2 in room2.get_edges():
             if not edge1.door_flag or not edge2.door_flag:
                 print('    bail bc one is not edge')
                 continue
             contact_area += edge_contact(edge1, edge2)
-    #print('contact_area:', contact_area)
     return contact_area
 
 

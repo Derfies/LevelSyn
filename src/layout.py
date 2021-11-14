@@ -1,11 +1,11 @@
 from reactor.geometry.vector import Vector2
 
 
-class RoomLayout:
+class Layout:
     
     def __init__(self):
         self.rooms = []
-        self.corridor_walls = []
+        #self.corridor_walls = []
         self.cached_collision_energies = {}
         self.cached_connectivities = {}
 
@@ -33,9 +33,9 @@ class RoomLayout:
             num_edges += room.num_edges
         return num_edges
 
-    @property
-    def num_corridor_walls(self):
-        return len(self.corridor_walls)
+    # @property
+    # def num_corridor_walls(self):
+    #     return len(self.corridor_walls)
 
     def clear_layout(self):
         self.rooms.clear()

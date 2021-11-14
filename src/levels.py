@@ -36,10 +36,14 @@ def main(argv):
 
     old_time = time.time()
     level_synthesizer = LevelSynth()
-    level_synthesizer.set_graph_and_templates(planar_graph, room_templates)
+    level_synthesizer.graph = planar_graph
+    level_synthesizer.templates = room_templates
+    #level_synthesizer.synthesize_scene()
+    level_synthesizer.synthesize_scene_via_main_loop()
+    #level_synthesizer.set_graph_and_templates(planar_graph, room_templates)
     elapse_time = time.time() - old_time
 
-    print(f'Have found {level_synthesizer.solution_count} solution(s) within {elapse_time} seconds.')
+    #print(f'Have found {level_synthesizer.solution_count} solution(s) within {elapse_time} seconds.')
 
     return 0
 

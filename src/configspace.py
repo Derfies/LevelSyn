@@ -20,7 +20,8 @@ from levelmath import (
     sort_vec_pr,
 )
 from linebase import LineBase
-from room import RoomEdge, RoomEdge2
+from room import RoomEdge#, RoomEdge2
+from linebase import LineBase
 from roomtemplates import RoomTemplates
 
 
@@ -41,10 +42,6 @@ class ConfigLine(LineBase):
         r = random.random()
         return self.pos1 if r >= 0.5 else self.pos2
 
-    def translate(self, trans):
-        self.pos1 += trans
-        self.pos2 += trans
-
 
 class ConfigSpace:
 
@@ -55,12 +52,13 @@ class ConfigSpace:
 
         if room1 is None and room2 is None:
             return
-
-        if room1.template_type in self.precomputed_table and room2.template_type in self.precomputed_table[room1.template_type]:
-            cs = self.precomputed_table[room1.template_type][room2.template_type]
-            cs.translate_config_space(room1.room_centre)
-            self.lines = copy.deepcopy(cs)
-            return
+        #
+        # if room1.template_type in self.precomputed_table and room2.template_type in self.precomputed_table[room1.template_type]:
+        #     cs = self.precomputed_table[room1.template_type][room2.template_type]
+        #     cs.translate_config_space(room1.room_centre)
+        #     self.lines = copy.deepcopy(cs)
+        #     print('using cache')
+        #     return
 
         # Why does 0.5 makes everything better?
         contact_thresh = settings.ROOM_CONTACT_THRESHOLD * 0.5
@@ -119,8 +117,11 @@ class ConfigSpace:
                         continue
                     pr3 = (pr1 + pr2) * 0.5
 
-                    room2n1 = copy.deepcopy(room2)
+                    room2n1 = copy.copy(room2)
+                    #print('g:', id(room2.g), id(room2n1.g), id(room2.g) == id(room2n1.g))
+                    #print('room', id(room2), id(room2n1), id(room2) == id(room2n1))
                     room2n1.translate(pr1)
+                    #print('origin:', id(room2.origin), id(room2n1.origin), id(room2.origin) == id(room2n1.origin))
 
                     # TODO: Could replace with touches / intersects?
                     if compute_collide_area(room1, room2n1):# > NUMERICAL_TOLERANCE:
@@ -129,7 +130,7 @@ class ConfigSpace:
                     if room_contact(room1, room2n1) < contact_thresh - NUMERICAL_TOLERANCE:
                         continue
                     # endif
-                    room2n2 = copy.deepcopy(room2)
+                    room2n2 = copy.copy(room2)
                     room2n2.translate(pr2)
                     if compute_collide_area(room1, room2n2):# > NUMERICAL_TOLERANCE:
                         continue
@@ -137,7 +138,7 @@ class ConfigSpace:
                     if room_contact(room1, room2n2) < contact_thresh - NUMERICAL_TOLERANCE:
                         continue
                     # endif
-                    room2n3 = copy.deepcopy(room2)
+                    room2n3 = copy.copy(room2)
                     room2n3.translate(pr3)
                     if compute_collide_area(room1, room2n3):# > NUMERICAL_TOLERANCE:
                         continue
@@ -146,8 +147,8 @@ class ConfigSpace:
                         continue
                     # endif
 
-                    pos1 = room2.get_centre() + pr1
-                    pos2 = room2.get_centre() + pr2
+                    pos1 = room2.centre + pr1
+                    pos2 = room2.centre + pr2
                     self.lines.append(ConfigLine(pos1, pos2))
 
         self.merge()
@@ -196,14 +197,14 @@ class ConfigSpace:
 
                 # 1st line has no length, test to see if it sits on the line
                 elif config_line1.sq_length < NUMERICAL_TOLERANCE_SQ:
-                    edge = RoomEdge2(config_line2.pos1, config_line2.pos2)
+                    edge = LineBase(config_line2.pos1, config_line2.pos2)
                     if point_to_segment_sq_distance(config_line1.pos1, edge) < NUMERICAL_TOLERANCE_SQ:
                         intersect_space.lines.append(config_line1)
                     continue
 
                 # 2nd line has no length, test to see if it sits on the line
                 elif config_line2.sq_length < NUMERICAL_TOLERANCE_SQ:
-                    edge = RoomEdge2(config_line1.pos1, config_line1.pos2)
+                    edge = LineBase(config_line1.pos1, config_line1.pos2)
                     if point_to_segment_sq_distance(config_line2.pos1, edge) < NUMERICAL_TOLERANCE_SQ:
                         intersect_space.lines.append(config_line2)
                     continue
@@ -275,8 +276,8 @@ class ConfigSpace:
         merge_flag = False
         for i in range(config_space.num_lines):
             line = config_space_new.lines[i]
-            edge1 = RoomEdge2(line.pos1, line.pos2)
-            edge2 = RoomEdge2(config_line.pos1, config_line.pos2)
+            edge1 = LineBase(line.pos1, line.pos2)
+            edge2 = LineBase(config_line.pos1, config_line.pos2)
             sq_length1 = edge1.sq_length
             sq_length2 = edge2.sq_length
 
@@ -356,7 +357,6 @@ class ConfigSpace:
         cls.precomputed_table.clear()
         for room in rooms:
             config_spaces = []
-            room.translate(-room.get_centre())
             for other_room in rooms:
                 config_spaces.append(ConfigSpace(room, other_room))
             cls.precomputed_table.append(config_spaces)
@@ -364,91 +364,16 @@ class ConfigSpace:
 
 if __name__ == '__main__':
 
-    '''
-    #
-    # for l in [
-    #     # LineBase(Vector2(1.5, 0), Vector2(1.5, 4)),
-    #     # LineBase(Vector2(1.5, 4), Vector2(1.5, 0)),
-    #     # LineBase(Vector2(1.5, 2), Vector2(1.5, 0)),
-    #     LineBase(Vector2(1.5, 4), Vector2(1.5, -2)),
-    # ]:
-    #     print('')
-    #     for p in [
-    #         #Vector2(1.5, -4),
-    #         # Vector2(1.5, -2),
-    #         # Vector2(1.5, 0),
-    #         Vector2(1.5, 2),
-    #         Vector2(1.5, 4),
-    #         # Vector2(1.5, 6),
-    #     ]:
-    #         print(f'point_to_segment_sq_distance: {l.pos1.x},{l.pos1.y} -> {l.pos2.x},{l.pos2.y}', ':', f'{p.x},{p.y}', '=', point_to_segment_sq_distance(p, l))
-
-    #print('point_to_segment_sq_distance:', p2, l.pos1, l.pos2, point_to_segment_sq_distance(p2, l))
-    room1 = Room()
-    room1.vertices.append(Vector2(0, 0))
-    room1.vertices.append(Vector2(0, 2))
-    room1.vertices.append(Vector2(2, 2))
-    room1.vertices.append(Vector2(2, 4))
-    room1.vertices.append(Vector2(4, 4))
-    room1.vertices.append(Vector2(4, 2))
-    room1.vertices.append(Vector2(6, 2))
-    room1.vertices.append(Vector2(6, 0))
-    # room1.vertices.append(Vector2(1, 2))
-    # room1.vertices.append(Vector2(1, 0))
-    room1.reset_door_flags()
-    room1.set_door_flag(2, True)
-    for i in range(len(room1.vertices)):
-        room1.set_door_flag(i, True)
-    print(room1)
-
-    room2 = Room()
-    room2.vertices.append(Vector2(12, 0))
-    room2.vertices.append(Vector2(12, 1))
-    room2.vertices.append(Vector2(13, 1))
-    room2.vertices.append(Vector2(13, 0))
-    room2.reset_door_flags()
-    room2.set_door_flag(0, True)
-    # for i in range(len(room2.vertices)):
-    #     room2.set_door_flag(i, True)
-
-    # room2 = Room()
-    # room2.vertices.append(Vector2(2, 0))
-    # room2.vertices.append(Vector2(2, 2))
-    # room2.vertices.append(Vector2(3, 2))
-    # room2.vertices.append(Vector2(3, 0))
-    # room2.reset_door_flags()
-    # room2.set_door_flag(0, True)
-
-    print(room2)
-
-    config_space = ConfigSpace(room1, room2)
-    print(config_space)
-
-    r1 = OrthogonalPolygon.from_positions(room1.vertices)
-    r2 = OrthogonalPolygon.from_positions(room2.vertices)
-
-    # print(room1)
-    # print(room2)
-
-    g = nx.Graph()
-    g = nx.compose(g, r1)
-    g = nx.compose(g, r2)
-    for line in config_space.config_lines:
-        p = OrthogonalPolygon.from_positions([line.pos1, line.pos2])
-        g = nx.compose(g, p)
-    utils.draw_map(g, [])
-
-    '''
     roomtemplates = RoomTemplates()
     roomtemplates.load(r'C:\Users\Jamie Davies\OneDrive\Documents\git\LevelSyn\data\building_blocks_fig1.xml')
     g = nx.Graph()
     for i, room in enumerate(roomtemplates.rooms):
-        #vertices = []
-        #for v in room.vertices:
-        #    vertices.append(v + Vector2(i, 0))
-        room.translate(Vector2(i, 0))
-        #p = OrthogonalPolygon.from_positions(vertices)
-        g = nx.compose(g, room)
+        #room.translate(Vector2(i, 0))
+        vertices = []
+        for node in roomtemplates.rooms[i].get_nodes():
+            vertices.append(node.position)
+        r1 = OrthogonalPolygon.from_positions(list(reversed(vertices)))
+        g = nx.compose(g, r1)
 
     ConfigSpace.precompute_table(roomtemplates.rooms)
     cs = ConfigSpace()
@@ -470,15 +395,9 @@ if __name__ == '__main__':
             g = nx.compose(g, r1)
 
             vertices = []
-            # for v in roomtemplates.rooms[j].vertices:
-            #     vertices.append(v + Vector2(0, 10))
             for node in roomtemplates.rooms[j].get_nodes():
                 vertices.append(node.position + Vector2(0, 10))
             r2 = OrthogonalPolygon.from_positions(list(reversed(vertices)))
-            #for node in r2:
-                # print('before:', r2.nodes[node]['position'])
-                # r2.nodes[node]['position'] += Vector2(1, 0)
-                # print('after:', r2.nodes[node]['position'])
             g = nx.compose(g, r2)
 
             for line in space.lines:
@@ -489,12 +408,5 @@ if __name__ == '__main__':
 
             file_name = '{0:03d}'.format(m)
             file_path = os.path.join('output', dir_name, file_name) + '.png'
-            #p = OrthogonalPolygon.from_positions(vertices)
-            #g = nx.compose(g, p)
-            #for node in g:
-
             utils.draw_graph(g, file_path)
-
             m += 1
-
-    #utils.draw_map(g, [])
