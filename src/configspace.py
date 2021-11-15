@@ -45,20 +45,23 @@ class ConfigLine(LineBase):
 
 class ConfigSpace:
 
-    precomputed_table = []
+    precomputed_table = {}
 
     def __init__(self, room1=None, room2=None):
         self.lines = []
 
         if room1 is None and room2 is None:
             return
-        #
-        # if room1.template_type in self.precomputed_table and room2.template_type in self.precomputed_table[room1.template_type]:
-        #     cs = self.precomputed_table[room1.template_type][room2.template_type]
-        #     cs.translate_config_space(room1.room_centre)
-        #     self.lines = copy.deepcopy(cs)
-        #     print('using cache')
-        #     return
+
+        # TODO: Do better caching constructor.
+        if room1.type in self.precomputed_table and room2.type in self.precomputed_table[room1.type]:
+            cs = self.precomputed_table[room1.type][room2.type]
+            #copy_cs = self.__class__()
+            #cs.translate_config_space(room1.centre)
+            self.lines = copy.deepcopy(cs.lines)
+            self.translate_config_space(room1.centre)
+            #print('using cache')
+            return
 
         # Why does 0.5 makes everything better?
         contact_thresh = settings.ROOM_CONTACT_THRESHOLD * 0.5
@@ -223,7 +226,7 @@ class ConfigSpace:
                     # the lines intersect.
                     flag_intersect, pi = segment_intersection(p11, p12, p21, p22)
                     if flag_intersect:
-                        intersect_line = ConfigLine(pi)
+                        intersect_line = ConfigLine(pi, pi)
                         intersect_space.lines.append(intersect_line)
 
                 else:
@@ -356,10 +359,11 @@ class ConfigSpace:
     def precompute_table(cls, rooms):
         cls.precomputed_table.clear()
         for room in rooms:
-            config_spaces = []
+            config_spaces = {}
             for other_room in rooms:
-                config_spaces.append(ConfigSpace(room, other_room))
-            cls.precomputed_table.append(config_spaces)
+                #config_spaces.append(ConfigSpace(room, other_room))
+                config_spaces[other_room.type] = ConfigSpace(room, other_room)
+            cls.precomputed_table[room.type] = config_spaces
 
 
 if __name__ == '__main__':

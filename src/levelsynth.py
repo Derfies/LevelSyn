@@ -1553,7 +1553,7 @@ class LevelSynth:
     #             return collide_area
     #
     #     collide_area = 1.f
-    #     for (j = 0; j < 2; j++):
+    #     for (j = 0; j < 2; j++):c
     #         p_min = max(bb1.m_posMin[j], bb2.m_posMin[j])
     #         p_max = min(bb1.m_posMax[j], bb2.m_posMax[j])
     #         if (p_min > p_max) return -1.f

@@ -1,4 +1,5 @@
 from reactor.const import POSITION
+from reactor.geometry.rect import Rect
 from reactor.geometry.vector import Vector2, Vector3
 from linebase import LineBase
 
@@ -90,12 +91,13 @@ class Room:
             max_pos = Vector2(max(xs), max(ys))
             self._bounding_box = min_pos, max_pos
         min_pos, max_pos = self._bounding_box
-        return min_pos + self.origin, max_pos + self.origin
+        return Rect(min_pos + self.origin, max_pos + self.origin)
 
     @property
     def centre(self):
-        min_pos, max_pos = self.bounding_box
-        return (min_pos + max_pos) * 0.5
+        #min_pos, max_pos = self.bounding_box
+        #return (min_pos + max_pos) * 0.5
+        return self.bounding_box.centre
     
     def translate(self, trans):
         self.origin += trans
